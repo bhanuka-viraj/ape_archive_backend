@@ -26,6 +26,7 @@ enum ResourceStatus {
 enum CategoryType {
   SUBJECT
   GRADE
+  LESSON
   MEDIUM
   RESOURCE_TYPE
   TAG           // New: For forum tags (e.g., "Rotational-Motion")
