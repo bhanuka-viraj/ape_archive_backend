@@ -4,8 +4,9 @@ import { securityMiddleware } from "./middlewares/security.middleware";
 import { httpLoggerPlugin } from "./plugins/http-logger.plugin";
 import { authRoutes } from "./routes/auth.routes";
 import { healthRoutes } from "./routes/health.routes";
-import { categoryRoutes } from "./routes/category.routes";
+import { tagRoutes } from "./routes/tag.routes";
 import { resourceRoutes } from "./routes/resource.routes";
+import { libraryRoutes } from "./routes/library.routes";
 import { announcementRoutes } from "./routes/announcement.routes";
 import { forumRoutes } from "./routes/forum.routes";
 import { teacherRoutes } from "./routes/teacher.routes";
@@ -49,10 +50,14 @@ export const app = new Elysia()
     );
   })
   .get("/", () => "Hello Elysia")
-  .use(healthRoutes)
-  .use(authRoutes)
-  .use(categoryRoutes)
-  .use(resourceRoutes)
-  .use(announcementRoutes)
-  .use(forumRoutes)
-  .use(teacherRoutes);
+  .group("/api/v1", (app) =>
+    app
+      .use(healthRoutes)
+      .use(authRoutes)
+      .use(tagRoutes)
+      .use(resourceRoutes)
+      .use(libraryRoutes)
+      .use(announcementRoutes)
+      .use(forumRoutes)
+      .use(teacherRoutes)
+  );

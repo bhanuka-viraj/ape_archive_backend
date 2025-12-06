@@ -1,7 +1,7 @@
 import { prisma } from "../config/database";
-import { CategoryType, Category } from "@prisma/client";
 import { log } from "../utils/logger";
 import { AppError } from "../utils/error";
+// TODO: category.service.ts uses deprecated Category model - migrate to tags or remove
 
 export const categoryService = {
   /**

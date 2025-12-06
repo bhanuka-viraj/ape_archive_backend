@@ -5,67 +5,104 @@ import { BadRequestError, UnauthorizedError } from "../utils/error";
 import { Role } from "@prisma/client";
 import { log } from "../utils/logger";
 
-const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+// Initialize Google OAuth2 Client
+const googleClient = new OAuth2Client(
+  env.GOOGLE_CLIENT_ID,
+  env.GOOGLE_CLIENT_SECRET,
+  env.GOOGLE_REDIRECT_URI
+);
 
 /**
- * Verify Google ID Token and return payload
+ * Generate Google OAuth2 Authorization URL for redirect
+ * Backend redirects user to Google consent screen
  */
-export const verifyGoogleToken = async (idToken: string) => {
-  try {
-    const ticket = await googleClient.verifyIdToken({
-      idToken,
-      audience: env.GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-    if (!payload) throw new Error("Invalid token payload");
-    return payload;
-  } catch (error) {
-    log.error("Google verify error", error as Error);
-    throw new BadRequestError("Invalid Google ID Token");
-  }
+export const getGoogleAuthUrl = () => {
+  const scopes = [
+    "https://www.googleapis.com/auth/userinfo.profile",
+    "https://www.googleapis.com/auth/userinfo.email",
+  ];
+
+  const authUrl = googleClient.generateAuthUrl({
+    access_type: "offline",
+    scope: scopes,
+  });
+
+  log.info("Generated Google auth URL for redirect");
+  return authUrl;
 };
 
 /**
- * Login or Signup with Google
+ * Handle Google OAuth Callback (Internal - from Google)
+ * Google redirects here after user authorizes
+ * We exchange code for tokens and get/create user
  */
-export const loginWithGoogle = async (idToken: string) => {
-  log.info("Attempting Google login");
-  const googlePayload = await verifyGoogleToken(idToken);
-  const { email, sub: googleId, name, picture } = googlePayload;
+export const handleGoogleRedirect = async (code: string) => {
+  try {
+    log.info("Handling Google OAuth redirect");
 
-  if (!email) {
-    throw new BadRequestError("Email not found in Google Token");
-  }
+    // Exchange code for tokens
+    const { tokens } = await googleClient.getToken(code);
 
-  // Find or Create User
-  let user = await prisma.user.findUnique({
-    where: { email },
-  });
+    if (!tokens.id_token) {
+      throw new Error("No ID token in response");
+    }
 
-  if (!user) {
-    log.info("Creating new user from Google login", { email });
-    // Create new user
-    user = await prisma.user.create({
-      data: {
-        email,
-        googleId,
-        name: name || "User",
-        imageUrl: picture,
-        role: Role.GUEST,
-        isOnboarded: false,
+    // Verify the ID token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) throw new Error("Invalid token payload");
+
+    const { email, sub: googleId, name, picture } = payload;
+
+    if (!email) {
+      throw new BadRequestError("Email not found in Google token");
+    }
+
+    // Find or create user
+    let user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      log.info("Creating new user from Google OAuth", { email });
+      user = await prisma.user.create({
+        data: {
+          email,
+          googleId,
+          name: name || "User",
+          imageUrl: picture,
+          role: Role.GUEST,
+          isOnboarded: false,
+        },
+      });
+    } else if (!user.googleId) {
+      log.info("Linking Google ID to existing user", { userId: user.id });
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { googleId, imageUrl: picture || user.imageUrl },
+      });
+    }
+
+    log.info("User authenticated successfully", { userId: user.id });
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        imageUrl: user.imageUrl,
+        isOnboarded: user.isOnboarded,
       },
-    });
-  } else if (!user.googleId) {
-    log.info("Linking Google ID to existing user", { userId: user.id });
-    // Link Google ID if existing user (optional logic)
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: { googleId, imageUrl: picture || user.imageUrl },
-    });
+    };
+  } catch (error) {
+    log.error("Google redirect handling failed", error as Error);
+    throw new BadRequestError("Failed to process Google authorization");
   }
-
-  log.info("Google login successful", { userId: user.id });
-  return user;
 };
 
 /**

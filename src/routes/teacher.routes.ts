@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
 import { teacherController } from "../controllers/teacher.controller";
 
-export const teacherRoutes = new Elysia({ prefix: "/teachers" }).use(
-  teacherController
-);
+export const teacherRoutes = (app: Elysia) =>
+  app.group("/teachers", (app) => app.use(teacherController));

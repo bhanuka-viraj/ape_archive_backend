@@ -1,26 +1,15 @@
 import { prisma } from "../config/database";
-import { ResourceStatus, Prisma, CategoryType } from "@prisma/client";
+import { ResourceStatus, Prisma } from "@prisma/client";
 import { log } from "../utils/logger";
 import { AppError } from "../utils/error";
-import { categoryService } from "./category.service";
+import { convertBigIntsToStrings } from "../utils/bigint-handler";
 import { Readable } from "stream";
 
 interface GetResourcesQuery {
   page?: number;
   limit?: number;
   search?: string;
-  category?: string;
-  status?: ResourceStatus;
-}
-
-interface CreateResourceInput {
-  title: string;
-  description?: string;
-  driveFileId: string;
-  mimeType: string;
-  fileSize: bigint;
-  uploaderId: string;
-  categories: string[]; // Category slugs or names
+  tagId?: string;
   status?: ResourceStatus;
 }
 
@@ -44,10 +33,10 @@ export const resourceService = {
       ];
     }
 
-    if (query.category) {
-      where.categories = {
+    if (query.tagId) {
+      where.tags = {
         some: {
-          slug: query.category,
+          id: query.tagId,
         },
       };
     }
@@ -59,7 +48,7 @@ export const resourceService = {
         take: limit,
         orderBy: { createdAt: "desc" },
         include: {
-          categories: true,
+          tags: true,
           uploader: {
             select: {
               id: true,
@@ -73,7 +62,7 @@ export const resourceService = {
     ]);
 
     return {
-      data: resources,
+      data: convertBigIntsToStrings(resources),
       meta: {
         total,
         page,
@@ -87,10 +76,10 @@ export const resourceService = {
    * Get resource by ID
    */
   getResourceById: async (id: string) => {
-    return await prisma.resource.findUnique({
+    const resource = await prisma.resource.findUnique({
       where: { id },
       include: {
-        categories: true,
+        tags: true,
         uploader: {
           select: {
             id: true,
@@ -102,69 +91,7 @@ export const resourceService = {
         },
       },
     });
-  },
-
-  /**
-   * Create a new resource
-   */
-  async createResource(input: CreateResourceInput) {
-    try {
-      // Get or create categories
-      const categoryPromises = input.categories.map(async (catName) => {
-        // Try to find by slug first
-        let category = await prisma.category.findUnique({
-          where: { slug: catName },
-        });
-
-        if (!category) {
-          // Try to get or create by name
-          // Default to TAG type if not specified
-          category = await categoryService.getOrCreateCategory(
-            catName,
-            CategoryType.TAG
-          );
-        }
-
-        return category;
-      });
-
-      const categories = await Promise.all(categoryPromises);
-
-      // Create resource
-      const resource = await prisma.resource.create({
-        data: {
-          title: input.title,
-          description: input.description,
-          driveFileId: input.driveFileId,
-          mimeType: input.mimeType,
-          fileSize: input.fileSize,
-          uploaderId: input.uploaderId,
-          status: input.status || ResourceStatus.PENDING,
-          categories: {
-            connect: categories.map((cat) => ({ id: cat.id })),
-          },
-        },
-        include: {
-          categories: true,
-          uploader: {
-            select: {
-              id: true,
-              name: true,
-              role: true,
-            },
-          },
-        },
-      });
-
-      log.info("Resource created", {
-        resourceId: resource.id,
-        title: input.title,
-      });
-      return resource;
-    } catch (error) {
-      log.error("Error creating resource", error as Error);
-      throw new AppError("Failed to create resource", 500);
-    }
+    return convertBigIntsToStrings(resource);
   },
 
   /**
@@ -176,7 +103,7 @@ export const resourceService = {
         where: { id },
         data: { status },
         include: {
-          categories: true,
+          tags: true,
           uploader: {
             select: {
               id: true,
@@ -188,7 +115,7 @@ export const resourceService = {
       });
 
       log.info("Resource status updated", { resourceId: id, status });
-      return resource;
+      return convertBigIntsToStrings(resource);
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -236,6 +163,56 @@ export const resourceService = {
     } catch (error) {
       log.error("Error incrementing download count", error as Error);
       // Don't throw - this is non-critical
+    }
+  },
+
+  /**
+   * Create a resource with tags (for admin upload)
+   */
+  async createResource(input: {
+    title: string;
+    description: string;
+    driveFileId: string;
+    mimeType: string;
+    fileSize: bigint;
+    status: ResourceStatus;
+    uploaderId: string;
+    tagIds: string[];
+    source?: "SYSTEM" | "USER";
+    storageNodeId?: number;
+  }) {
+    try {
+      const resource = await prisma.resource.create({
+        data: {
+          title: input.title,
+          description: input.description,
+          driveFileId: input.driveFileId,
+          mimeType: input.mimeType,
+          fileSize: input.fileSize,
+          status: input.status,
+          source: input.source || "USER",
+          uploaderId: input.uploaderId,
+          storageNodeId: input.storageNodeId,
+          tags: {
+            connect: input.tagIds.map((id) => ({ id })),
+          },
+        },
+        include: {
+          tags: true,
+          uploader: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      return convertBigIntsToStrings(resource);
+    } catch (error) {
+      log.error("Error creating resource", error as Error);
+      throw new AppError("Failed to create resource", 500);
     }
   },
 };

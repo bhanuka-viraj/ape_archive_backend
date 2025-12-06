@@ -1,14 +1,14 @@
 import { prisma } from "../config/database";
-import { Role, CategoryType, Prisma } from "@prisma/client";
+import { Role, Prisma } from "@prisma/client";
 import { log } from "../utils/logger";
 import { AppError } from "../utils/error";
-import { categoryService } from "./category.service";
+import { tagService } from "./tag.service";
 
 interface CreateQuestionInput {
   title: string;
   content: string;
   authorId: string;
-  categoryTags: string[]; // Category slugs
+  tagIds: string[]; // Tag IDs
 }
 
 interface CreateAnswerInput {
@@ -32,32 +32,15 @@ export const forumService = {
           .replace(/[^\w-]/g, "")
           .slice(0, 50) + `-${Date.now()}`;
 
-      // Get or create category tags
-      const categoryPromises = input.categoryTags.map(async (tagName) => {
-        let category = await prisma.category.findUnique({
-          where: { slug: tagName },
-        });
-
-        if (!category) {
-          category = await categoryService.getOrCreateCategory(
-            tagName,
-            CategoryType.TAG
-          );
-        }
-
-        return category;
-      });
-
-      const categories = await Promise.all(categoryPromises);
-
+      // Connect tags directly using tag IDs
       const question = await prisma.question.create({
         data: {
           title: input.title,
           content: input.content,
           slug,
           authorId: input.authorId,
-          categories: {
-            connect: categories.map((cat) => ({ id: cat.id })),
+          tags: {
+            connect: input.tagIds.map((id) => ({ id })),
           },
         },
         include: {
@@ -69,7 +52,7 @@ export const forumService = {
               imageUrl: true,
             },
           },
-          categories: true,
+          tags: true,
           answers: true,
         },
       });
@@ -101,7 +84,7 @@ export const forumService = {
               imageUrl: true,
             },
           },
-          categories: true,
+          tags: true,
           answers: {
             include: {
               author: {
@@ -148,7 +131,7 @@ export const forumService = {
     page: number = 1,
     limit: number = 10,
     search?: string,
-    categorySlug?: string,
+    tagId?: string,
     solved?: boolean
   ) {
     try {
@@ -163,9 +146,9 @@ export const forumService = {
         ];
       }
 
-      if (categorySlug) {
-        where.categories = {
-          some: { slug: categorySlug },
+      if (tagId) {
+        where.tags = {
+          some: { id: tagId },
         };
       }
 
@@ -188,7 +171,7 @@ export const forumService = {
                 imageUrl: true,
               },
             },
-            categories: true,
+            tags: true,
             answers: {
               select: { id: true },
             },

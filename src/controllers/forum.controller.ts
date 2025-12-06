@@ -35,6 +35,9 @@ export const forumController = new Elysia()
         category: t.Optional(t.String()),
         solved: t.Optional(t.String()),
       }),
+      detail: {
+        tags: ["Forum"],
+      },
     }
   )
   .post(
@@ -71,22 +74,33 @@ export const forumController = new Elysia()
         content: t.String({ minLength: 10 }),
         categoryTags: t.Optional(t.Array(t.String())),
       }),
+      detail: {
+        tags: ["Forum"],
+      },
     }
   )
-  .get("/:id", async ({ params, set }) => {
-    try {
-      const question = await forumService.getQuestionById(params.id);
-      return successResponse(question, "Question fetched successfully");
-    } catch (error) {
-      if (error instanceof AppError && error.statusCode === 404) {
-        set.status = 404;
-        return errorResponse("Question not found", 404);
+  .get(
+    "/:id",
+    async ({ params, set }) => {
+      try {
+        const question = await forumService.getQuestionById(params.id);
+        return successResponse(question, "Question fetched successfully");
+      } catch (error) {
+        if (error instanceof AppError && error.statusCode === 404) {
+          set.status = 404;
+          return errorResponse("Question not found", 404);
+        }
+        log.error("Error fetching question", error as Error);
+        set.status = 500;
+        return errorResponse("Failed to fetch question", 500);
       }
-      log.error("Error fetching question", error as Error);
-      set.status = 500;
-      return errorResponse("Failed to fetch question", 500);
+    },
+    {
+      detail: {
+        tags: ["Forum"],
+      },
     }
-  })
+  )
   // Answers endpoints - nested under questions
   .post(
     "/:id/answers",
@@ -121,6 +135,9 @@ export const forumController = new Elysia()
       body: t.Object({
         content: t.String({ minLength: 10 }),
       }),
+      detail: {
+        tags: ["Answer"],
+      },
     }
   )
   // Mark answer as accepted - using a different endpoint structure
@@ -148,5 +165,10 @@ export const forumController = new Elysia()
         set.status = 500;
         return errorResponse("Failed to mark answer as accepted", 500);
       }
+    },
+    {
+      detail: {
+        tags: ["Answer"],
+      },
     }
   );

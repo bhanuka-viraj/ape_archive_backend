@@ -31,6 +31,7 @@ class DriveService {
   private folderCache: Map<string, FolderCacheEntry> = new Map();
   private readonly CACHE_TTL = 3600000; // 1 hour in ms
   private readonly FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
+  private initialized: boolean = false;
 
   constructor() {
     // Initialize OAuth2 Client
@@ -39,11 +40,12 @@ class DriveService {
       env.GOOGLE_CLIENT_SECRET
     );
 
-    // Set credentials with refresh token
+    // Set credentials with refresh token from env (fallback)
     if (env.GOOGLE_REFRESH_TOKEN) {
       this.oauth2Client.setCredentials({
         refresh_token: env.GOOGLE_REFRESH_TOKEN,
       });
+      this.initialized = true;
     }
 
     // Initialize Drive API
@@ -51,6 +53,51 @@ class DriveService {
       version: "v3",
       auth: this.oauth2Client,
     });
+  }
+
+  /**
+   * Initialize with credentials from Storage Node (for runtime use)
+   * This allows the drive service to use database-stored credentials
+   */
+  async initializeFromStorageNode(storageNodeId: number = 1): Promise<void> {
+    if (this.initialized) {
+      log.debug("Drive service already initialized, skipping");
+      return;
+    }
+
+    try {
+      const { PrismaClient } = await import("@prisma/client");
+      const prisma = new PrismaClient();
+
+      const storageNode = await prisma.storageNode.findUnique({
+        where: { id: storageNodeId },
+      });
+
+      await prisma.$disconnect();
+
+      if (!storageNode) {
+        log.warn(
+          `Storage Node ${storageNodeId} not found, using env credentials`
+        );
+        return;
+      }
+
+      if (!storageNode.refreshToken) {
+        log.warn(`Storage Node has no refresh token, using env credentials`);
+        return;
+      }
+
+      log.debug(
+        `Initializing DriveService with credentials from StorageNode: ${storageNode.name}`
+      );
+      this.oauth2Client.setCredentials({
+        refresh_token: storageNode.refreshToken,
+      });
+      this.initialized = true;
+    } catch (error) {
+      log.warn("Failed to initialize from storage node", error as Error);
+      // Fall back to env credentials
+    }
   }
 
   /**

@@ -31,22 +31,33 @@ export const teacherController = new Elysia()
         limit: t.Optional(t.String()),
         subject: t.Optional(t.String()),
       }),
+      detail: {
+        tags: ["Teacher"],
+      },
     }
   )
-  .get("/:id", async ({ params, set }) => {
-    try {
-      const teacher = await teacherService.getTeacherById(params.id);
-      return successResponse(teacher, "Teacher fetched successfully");
-    } catch (error) {
-      if (error instanceof AppError && error.statusCode === 404) {
-        set.status = 404;
-        return errorResponse("Teacher not found", 404);
+  .get(
+    "/:id",
+    async ({ params, set }) => {
+      try {
+        const teacher = await teacherService.getTeacherById(params.id);
+        return successResponse(teacher, "Teacher fetched successfully");
+      } catch (error) {
+        if (error instanceof AppError && error.statusCode === 404) {
+          set.status = 404;
+          return errorResponse("Teacher not found", 404);
+        }
+        log.error("Error fetching teacher", error as Error);
+        set.status = 500;
+        return errorResponse("Failed to fetch teacher", 500);
       }
-      log.error("Error fetching teacher", error as Error);
-      set.status = 500;
-      return errorResponse("Failed to fetch teacher", 500);
+    },
+    {
+      detail: {
+        tags: ["Teacher"],
+      },
     }
-  })
+  )
   .get(
     "/subject/:slug",
     async ({ params, query, set }) => {
@@ -75,5 +86,8 @@ export const teacherController = new Elysia()
         page: t.Optional(t.String()),
         limit: t.Optional(t.String()),
       }),
+      detail: {
+        tags: ["Teacher"],
+      },
     }
   );

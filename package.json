@@ -1,10 +1,15 @@
 {
-  "name": "NoteBackend",
+  "name": "ape-archive",
   "version": "1.0.50",
+  "description": "Ape Archive - Disaster Relief Education Platform with Google Drive Integration",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run generate && bun run --watch src/index.ts",
-    "generate": "dotenv -e .env -- prisma generate"
+    "generate": "dotenv -e .env -- prisma generate",
+    "seed": "bun prisma db seed",
+    "sync:drive": "dotenv -e .env -- bun src/scripts/sync-drive.ts",
+    "migrate:drive": "dotenv -e .env -- bun src/scripts/migrate-drive.ts",
+    "start": "bun src/index.ts"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.4.0",
@@ -25,6 +30,9 @@
     "prisma": "6.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "prisma": {
+    "seed": "bun prisma/seed.ts"
   },
   "module": "src/index.js",
   "type": "module",

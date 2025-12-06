@@ -1,26 +1,29 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import * as authController from "../controllers/auth.controller";
-import {
-  GoogleLoginDTO,
-  RefreshTokenDTO,
-  OnboardUserDTO,
-} from "../dto/auth.dto";
+import { OnboardUserDTO } from "../dto/auth.dto";
 import { isAuthenticated } from "../middlewares/auth.middleware";
 
 export const authRoutes = (app: Elysia) =>
   app.group("/auth", (app) =>
     app
-      .post("/google", authController.googleLogin, {
-        body: GoogleLoginDTO,
+      .get("/google", authController.getGoogleAuthUrl, {
         detail: {
-          summary: "Google Login/Signup",
+          summary: "Redirect to Google OAuth",
+          description:
+            "Redirects user to Google consent screen. This is the login entry point.",
           tags: ["Auth"],
         },
       })
-      .post("/refresh", authController.refreshToken, {
-        body: RefreshTokenDTO,
+      .get("/google/callback", authController.handleGoogleCallback, {
+        query: t.Object({
+          code: t.Optional(t.String()),
+          error: t.Optional(t.String()),
+          state: t.Optional(t.String()),
+        }),
         detail: {
-          summary: "Refresh Access Token",
+          summary: "Google OAuth Callback (Internal)",
+          description:
+            "Internal callback from Google. User is redirected here after authorizing. Then backend redirects to frontend with access token.",
           tags: ["Auth"],
         },
       })

@@ -23,13 +23,14 @@ enum ResourceStatus {
   ARCHIVED
 }
 
-enum CategoryType {
-  SUBJECT
-  GRADE
-  LESSON
-  MEDIUM
-  RESOURCE_TYPE
-  TAG           // New: For forum tags (e.g., "Rotational-Motion")
+enum TagSource {
+  SYSTEM  // System-generated (migrated from hierarchy)
+  USER    // User-created (custom tags)
+}
+
+enum ResourceSource {
+  SYSTEM  // Migrated resources or admin-uploaded
+  USER    // User-uploaded resources
 }
 
 // --- USER & AUTH ---
@@ -67,8 +68,8 @@ model StudentProfile {
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id])
   
-  // Interests (Linked to Categories like "Combined Maths")
-  interests Category[] 
+  // Interests (Linked to Tags like "Combined Maths")
+  interests Tag[] 
 }
 
 model TeacherProfile {
@@ -84,7 +85,7 @@ model TeacherProfile {
   userId         String   @unique
   user           User     @relation(fields: [userId], references: [id])
   
-  subjects       Category[]
+  subjects       Tag[]
 }
 
 // --- FORUM (Q&A) ---
@@ -105,7 +106,7 @@ model Question {
   authorId    String
   author      User     @relation(fields: [authorId], references: [id])
   
-  categories  Category[] // Tags: "Physics", "Mechanics"
+  tags        Tag[]        // Forum tags: "Physics", "Mechanics"
   answers     Answer[]
 }
 
@@ -142,31 +143,38 @@ model Vote {
   @@unique([userId, answerId]) // User can only vote once per answer
 }
 
-// --- RESOURCES & STORAGE (Existing) ---
+// --- TAGS & RESOURCES ---
 
 model StorageNode {
   id             Int      @id @default(autoincrement())
-  email          String   @unique 
-  refreshToken   String   
-  totalSpace     BigInt   
-  usedSpace      BigInt   @default(0) 
+  name           String   @unique  // e.g. "Default Storage", "Sri Lanka Server"
+  email          String   @unique  // Google Drive account email
+  refreshToken   String   @db.Text // OAuth2 refresh token (encrypted in production)
+  totalSpace     BigInt   @default(0) // In bytes
+  usedSpace      BigInt   @default(0)
   isActive       Boolean  @default(true)
-  lastUploadAt   DateTime @default(now()) 
-
-  files          Resource[]
-}
-
-model Category {
-  id          Int          @id @default(autoincrement())
-  name        String
-  slug        String       @unique 
-  type        CategoryType
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
   
   // Relations
-  resources        Resource[]   
-  questions        Question[]       // Forum tags
-  teacherProfiles  TeacherProfile[]
-  studentProfiles  StudentProfile[] // Student interests
+  resources      Resource[]
+}
+
+model Tag {
+  id             String      @id @default(uuid())
+  name           String      @unique
+  slug           String      @unique
+  group          String?     // e.g. "Grade", "Subject", "Lesson", "Medium", "ResourceType"
+  source         TagSource   @default(USER) // SYSTEM for migrated, USER for custom tags
+  
+  createdAt      DateTime    @default(now())
+  
+  // Relations
+  resources          Resource[]
+  questions          Question[]
+  teacherProfiles    TeacherProfile[]
+  studentProfiles    StudentProfile[]
 }
 
 model Resource {
@@ -174,23 +182,30 @@ model Resource {
   title       String
   description String?        @db.Text
   
-  driveFileId String?  
+  driveFileId String?  // Copied file ID in upload folder (after migration)
   mimeType    String?  
   fileSize    BigInt?  
   externalUrl String? 
 
   status      ResourceStatus @default(PENDING)
+  source      ResourceSource @default(USER) // SYSTEM for migrated/admin, USER for user-uploaded
   views       Int            @default(0)
   downloads   Int            @default(0)
   
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  categories    Category[]   
-  storageNodeId Int?         
+  tags          Tag[]
+  
+  storageNodeId Int?
   storageNode   StorageNode? @relation(fields: [storageNodeId], references: [id])
+  
   uploaderId    String
   uploader      User         @relation("UserUploads", fields: [uploaderId], references: [id])
+
+  @@index([title])
+  @@index([status])
+  @@index([source])
 }
 
 model Announcement {

@@ -1,23 +1,31 @@
+/**
+ * Standard Success Response Format
+ * Used for all successful API responses
+ */
 export const successResponse = <T = any>(
-    data: T,
-    message: string = "Success"
+  data: T,
+  message: string = "Success"
 ) => {
-    return {
-        success: true,
-        message,
-        data,
-    };
+  return {
+    success: true,
+    message,
+    data,
+  };
 };
 
+/**
+ * Standard Error Response Format
+ * Used for all error API responses
+ */
 export const errorResponse = (
-    message: string = "Error",
-    code: number = 500,
-    error?: any
+  message: string = "Error",
+  statusCode: number = 500,
+  error?: any
 ) => {
-    return {
-        success: false,
-        message,
-        code,
-        error,
-    };
+  return {
+    success: false,
+    message,
+    statusCode,
+    ...(error && { error }),
+  };
 };

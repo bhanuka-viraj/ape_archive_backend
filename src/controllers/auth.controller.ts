@@ -1,66 +1,98 @@
 import { Context } from "elysia";
 import * as authService from "../services/auth.service";
-import { GoogleLoginBody, RefreshTokenBody } from "../dto/auth.dto";
-import { env } from "../config/env";
+import { env, isWhitelistedFrontend } from "../config/env";
 import { UnauthorizedError, BadRequestError } from "../utils/error";
 import { asyncHandler } from "../middlewares/async-handler.middleware";
 import { log } from "../utils/logger";
+import { errorResponse } from "../utils/response";
 import { Role } from "@prisma/client";
 
 /**
- * Handle Google Login/Signup
+ * Step 1: Redirect to Google Authorization
+ * Frontend calls this endpoint, backend redirects to Google consent screen
  */
-export const googleLogin = asyncHandler(async ({ body, jwt, set }: any) => {
-  const { idToken } = body;
+export const getGoogleAuthUrl = asyncHandler(async ({ set }: any) => {
+  log.info("Redirecting to Google OAuth");
 
-  log.info("Processing Google login request");
+  const authUrl = authService.getGoogleAuthUrl();
 
-  // 1. Verify Google Token & Get/Create User
-  const user = await authService.loginWithGoogle(idToken);
+  set.status = 302;
+  set.headers["Location"] = authUrl;
 
-  // 2. Generate Tokens
-  const accessToken = await jwt.sign({
-    id: user.id,
-    role: user.role,
-    deviceId: "web", // Default or extract from headers
-  });
-
-  // Note: For refresh token, ideally use a separate secret/plugin or store in DB.
-  // Here we sign with the same secret but you might want to differentiate.
-  // Since the current setup has one jwt plugin, we'll use it.
-  // Ideally, we should have a separate signer for refresh tokens.
-  const refreshToken = await jwt.sign({
-    id: user.id,
-    type: "refresh",
-  });
-
-  log.info("Tokens generated successfully", { userId: user.id });
-
-  return {
-    success: true,
-    data: {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        imageUrl: user.imageUrl,
-        isOnboarded: user.isOnboarded,
-      },
-      accessToken,
-      refreshToken,
-    },
-  };
+  return "";
 });
 
 /**
- * Get Current User (/me)
+ * Step 2: Handle Google OAuth Callback (Internal)
+ * Google redirects here after user authorizes
+ * Backend exchanges code for tokens, creates/finds user
+ * Then redirects frontend to success URL with access token in fragment
  */
-export const getMe = asyncHandler(async ({ user }: any) => {
-  log.debug("Fetching current user profile", { userId: user.userId });
-  // user is attached by authMiddleware
-  const dbUser = await authService.getUserById(user.userId);
+export const handleGoogleCallback = asyncHandler(
+  async ({ query, jwt, set }: any) => {
+    const { code, error, state } = query;
 
+    if (error) {
+      log.warn("Google OAuth error", { error });
+      set.status = 400;
+      return errorResponse(`Google authorization failed: ${error}`, 400);
+    }
+
+    if (!code) {
+      log.warn("Missing authorization code in callback");
+      set.status = 400;
+      return errorResponse("Missing authorization code", 400);
+    }
+
+    log.info("Processing Google OAuth callback");
+
+    // Handle Google redirect - get/create user
+    const { user } = await authService.handleGoogleRedirect(code);
+
+    // Generate our own JWT access token
+    const accessToken = await jwt.sign({
+      id: user.id,
+      role: user.role,
+      type: "access",
+    });
+
+    log.info("User authenticated successfully", { userId: user.id });
+
+    // Validate redirect URL against whitelist
+    if (!isWhitelistedFrontend(env.FRONTEND_SUCCESS_URL)) {
+      log.error("Frontend success URL not in whitelist", {
+        url: env.FRONTEND_SUCCESS_URL,
+        whitelist: env.FRONTEND_WHITELIST,
+      });
+      set.status = 500;
+      return errorResponse("Server configuration error", 500);
+    }
+
+    // Redirect frontend to success URL with token in fragment
+    const redirectUrl = new URL(env.FRONTEND_SUCCESS_URL);
+    redirectUrl.hash = `accessToken=${accessToken}&userId=${user.id}&isOnboarded=${user.isOnboarded}`;
+
+    set.status = 302;
+    set.headers["Location"] = redirectUrl.toString();
+
+    return "";
+  }
+);
+
+/**
+ * Get Current User Profile (/me)
+ */
+export const getMe = asyncHandler(async ({ user, set }: any) => {
+  if (!user) {
+    set.status = 401;
+    throw new UnauthorizedError("Unauthorized");
+  }
+
+  log.debug("Fetching current user profile", { userId: user.id });
+
+  const dbUser = await authService.getUserById(user.id);
+
+  set.status = 200;
   return {
     success: true,
     data: {
@@ -72,40 +104,7 @@ export const getMe = asyncHandler(async ({ user }: any) => {
       isOnboarded: dbUser.isOnboarded,
       createdAt: dbUser.createdAt,
     },
-  };
-});
-
-/**
- * Refresh Token
- */
-export const refreshToken = asyncHandler(async ({ body, jwt }: any) => {
-  const { refreshToken } = body;
-
-  log.info("Processing refresh token request");
-
-  const payload = await jwt.verify(refreshToken);
-  if (!payload) {
-    log.warn("Invalid refresh token provided");
-    throw new UnauthorizedError("Invalid Refresh Token");
-  }
-
-  // Check if user still exists
-  const user = await authService.getUserById(payload.id as string);
-
-  // Generate new Access Token
-  const newAccessToken = await jwt.sign({
-    id: user.id,
-    role: user.role,
-    deviceId: "web",
-  });
-
-  log.info("Access token refreshed successfully", { userId: user.id });
-
-  return {
-    success: true,
-    data: {
-      accessToken: newAccessToken,
-    },
+    message: "User profile retrieved successfully",
   };
 });
 
@@ -135,9 +134,9 @@ export const onboardUser = asyncHandler(async ({ body, user, set }: any) => {
     throw new BadRequestError("Role must be STUDENT or TEACHER");
   }
 
-  log.info("Onboarding user", { userId: user.userId, role });
+  log.info("Onboarding user", { userId: user.id, role });
 
-  const updatedUser = await authService.onboardUser(user.userId, {
+  const updatedUser = await authService.onboardUser(user.id, {
     role,
     school,
     batch,
@@ -149,6 +148,7 @@ export const onboardUser = asyncHandler(async ({ body, user, set }: any) => {
     subjects,
   });
 
+  set.status = 200;
   return {
     success: true,
     data: {
@@ -159,5 +159,6 @@ export const onboardUser = asyncHandler(async ({ body, user, set }: any) => {
       isOnboarded: updatedUser.isOnboarded,
       imageUrl: updatedUser.imageUrl,
     },
+    message: "User onboarded successfully",
   };
 });
