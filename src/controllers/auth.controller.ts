@@ -1,10 +1,14 @@
 import { Context } from "elysia";
 import * as authService from "../services/auth.service";
 import { env, isWhitelistedFrontend } from "../config/env";
-import { UnauthorizedError, BadRequestError } from "../utils/error";
+import {
+  UnauthorizedError,
+  BadRequestError,
+  ForbiddenError,
+} from "../utils/error";
 import { asyncHandler } from "../middlewares/async-handler.middleware";
 import { log } from "../utils/logger";
-import { errorResponse } from "../utils/response";
+import { errorResponse, successResponse } from "../utils/response";
 import { Role } from "@prisma/client";
 
 /**
@@ -160,5 +164,96 @@ export const onboardUser = asyncHandler(async ({ body, user, set }: any) => {
       imageUrl: updatedUser.imageUrl,
     },
     message: "User onboarded successfully",
+  };
+});
+
+/**
+ * Get All Users (Paginated, ADMIN only)
+ */
+export const getUsers = asyncHandler(async ({ user, query, set }: any) => {
+  if (!user) {
+    set.status = 401;
+    throw new UnauthorizedError("Unauthorized");
+  }
+
+  if (user.role !== Role.ADMIN) {
+    set.status = 403;
+    throw new ForbiddenError("Only admins can view users");
+  }
+
+  const page = query.page ? Number(query.page) : 1;
+  const limit = query.limit ? Number(query.limit) : 10;
+  const skip = (page - 1) * limit;
+
+  log.info("Admin fetching users list", { page, limit, adminId: user.id });
+
+  const [users, total] = await Promise.all([
+    authService.getUsers({ skip, take: limit }),
+    authService.getUserCount(),
+  ]);
+
+  set.status = 200;
+  return {
+    success: true,
+    data: {
+      users,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    },
+    message: "Users fetched successfully",
+  };
+});
+
+/**
+ * Change User Role (ADMIN only)
+ */
+export const changeUserRole = asyncHandler(async ({ body, user, set }: any) => {
+  if (!user) {
+    set.status = 401;
+    throw new UnauthorizedError("Unauthorized");
+  }
+
+  if (user.role !== Role.ADMIN) {
+    set.status = 403;
+    throw new ForbiddenError("Only admins can change user roles");
+  }
+
+  const { userId, role } = body;
+
+  if (!userId || !role) {
+    set.status = 400;
+    throw new BadRequestError("userId and role are required");
+  }
+
+  if (!Object.values(Role).includes(role)) {
+    set.status = 400;
+    throw new BadRequestError(
+      `Invalid role. Must be one of: ${Object.values(Role).join(", ")}`
+    );
+  }
+
+  log.info("Admin changing user role", {
+    targetUserId: userId,
+    newRole: role,
+    adminId: user.id,
+  });
+
+  const updatedUser = await authService.updateUserRole(userId, role);
+
+  set.status = 200;
+  return {
+    success: true,
+    data: {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      role: updatedUser.role,
+      imageUrl: updatedUser.imageUrl,
+    },
+    message: `User role updated to ${role} successfully`,
   };
 });

@@ -1,7 +1,8 @@
 import { Elysia, t } from "elysia";
 import * as authController from "../controllers/auth.controller";
 import { OnboardUserDTO } from "../dto/auth.dto";
-import { isAuthenticated } from "../middlewares/auth.middleware";
+import { isAuthenticated, authorize } from "../middlewares/auth.middleware";
+import { Role } from "@prisma/client";
 
 export const authRoutes = (app: Elysia) =>
   app.group("/auth", (app) =>
@@ -39,6 +40,31 @@ export const authRoutes = (app: Elysia) =>
         body: OnboardUserDTO,
         detail: {
           summary: "Onboard User - Set Role and Profile",
+          tags: ["Auth"],
+          security: [{ BearerAuth: [] }],
+        },
+      })
+      .use(authorize([Role.ADMIN]))
+      .get("/users", authController.getUsers, {
+        query: t.Object({
+          page: t.Optional(t.String()),
+          limit: t.Optional(t.String()),
+        }),
+        detail: {
+          summary: "Get All Users (Admin Only)",
+          description: "Paginated list of all users. Requires ADMIN role.",
+          tags: ["Auth"],
+          security: [{ BearerAuth: [] }],
+        },
+      })
+      .post("/users/change-role", authController.changeUserRole, {
+        body: t.Object({
+          userId: t.String(),
+          role: t.String(),
+        }),
+        detail: {
+          summary: "Change User Role (Admin Only)",
+          description: "Change a user's role. Requires ADMIN role.",
           tags: ["Auth"],
           security: [{ BearerAuth: [] }],
         },

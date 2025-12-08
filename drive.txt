@@ -1,0 +1,1518 @@
+Drive Structure Map - 2025-12-08T07:16:24.646Z
+
+📂 ape_archive (ROOT)
+  📂 6 - 9 Class Subjects
+    📂 Art
+    📂 Buddhism
+    📂 Civic
+    📂 Dancing
+    📂 Drama
+    📂 Eastern Music
+    📂 English
+    📂 Geography 
+    📂 Health
+    📂 History
+    📂 Mathematics
+    📂 P.T.S
+    📂 Science
+    📂 Sinhala
+    📂 Tamil
+    📂 Western Music
+  📂 A/L Subjects
+    📂 Art Stream
+      📂 Accounting or Business Statics
+        📂 Grade 12
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Agriculture or Mathematics
+        📂 Grade 12
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01-Investigates the contribution of agriculture sector to the development of Sri lanka considering objectives of agri- culture practically.
+            📂 Unit 02-Investigates the importance of climtic factors on crop pro- duction.
+            📂 Unit 03-Prepares plan to obtain high yield through the manage- ment of the quality of soil.
+            📂 Unit 04-Plans strategies for the management of nutrients to obtain an optimum yeild.
+            📂 Unit 05-Exhibits the readiness for establishment of crops in a suit- able soil enviornment.
+            📂 Unit 06-Plans suitable irrigation and drainage methods for success full crop cultivation.
+            📂 Unit 07-Exhibits readiness to obtain a high yield by optimizing plant physiological processes.
+            📂 Unit 08-Engages in plant propogation using suitable technologies.
+            📂 Unit 09-Investigates the methodologies of plant breeding for crop improvement and conservation of genetic resources.
+            📂 Unit 10-Plans controled enviornmental conditions to obtain successful crop cultivation.
+            📂 Unit 11-Plans soiless cultures for quantitative and qualitative yield.
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01-Investigates the contribution of agriculture sector to the development of Sri lanka considering objectives of agri- culture practically.
+            📂 Unit 02-Investigates the importance of climtic factors on crop pro- duction.
+            📂 Unit 03-Prepares plan to obtain high yield through the manage- ment of the quality of soil.
+            📂 Unit 04-Plans strategies for the management of nutrients to obtain an optimum yeild.
+            📂 Unit 05-Exhibits the readiness for establishment of crops in a suit- able soil enviornment.
+            📂 Unit 06-Plans suitable irrigation and drainage methods for success full crop cultivation.
+            📂 Unit 07-Exhibits readiness to obtain a high yield by optimizing plant physiological processes.
+            📂 Unit 08-Engages in plant propogation using suitable technologies.
+            📂 Unit 09-Investigates the methodologies of plant breeding for crop improvement and conservation of genetic resources.
+            📂 Unit 10-Plans controled enviornmental conditions to obtain successful crop cultivation.
+            📂 Unit 11-Plans soiless cultures for quantitative and qualitative yield.
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01-Investigates the contribution of agriculture sector to the development of Sri lanka considering objectives of agri- culture practically.
+            📂 Unit 02-Investigates the importance of climtic factors on crop pro- duction.
+            📂 Unit 03-Prepares plan to obtain high yield through the manage- ment of the quality of soil.
+            📂 Unit 04-Plans strategies for the management of nutrients to obtain an optimum yeild.
+            📂 Unit 05-Exhibits the readiness for establishment of crops in a suit- able soil enviornment.
+            📂 Unit 06-Plans suitable irrigation and drainage methods for success full crop cultivation.
+            📂 Unit 07-Exhibits readiness to obtain a high yield by optimizing plant physiological processes.
+            📂 Unit 08- Engages in plant propogation using suitable technologies.
+            📂 Unit 09-Investigates the methodologies of plant breeding for crop improvement and conservation of genetic resources.
+            📂 Unit 10-Plans controled enviornmental conditions to obtain successful crop cultivation.
+            📂 Unit 11-Plans soiless cultures for quantitative and qualitative yield.
+        📂 Grade 13
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 12-Plans the effective pest management practices to ensure successful crop production.
+            📂 Unit 13-Plans quality food consumption patterns for the healthy life.
+            📂 Unit 14-Innvestigates pre and postharvest techniques for the high quality harvest.
+            📂 Unit 15-Plans methologies of animal husbandry to ensure high qualitative and quantitative yield.
+            📂 Unit 16-Exhibits readinets to apply principles of economics to im- prove the productivity in agricultural enterprises.
+            📂 Unit 17-Exhibits readiness to engage in the sustainable agriculture.
+            📂 Unit 18-Investigates stratergies to minimize health problems and exhibits readiness of engage in sustainable agriculture.
+            📂 Unit 19-Exhibits readiness to plan to overcome challenges faced in agriculture.
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 12-Plans the effective pest management practices to ensure successful crop production.
+            📂 Unit 13-Plans quality food consumption patterns for the healthy life.
+            📂 Unit 14-Innvestigates pre and postharvest techniques for the high quality harvest.
+            📂 Unit 15-Plans methologies of animal husbandry to ensure high qualitative and quantitative yield.
+            📂 Unit 16-Exhibits readinets to apply principles of economics to im- prove the productivity in agricultural enterprises.
+            📂 Unit 17-Exhibits readiness to engage in the sustainable agriculture.
+            📂 Unit 18-Investigates stratergies to minimize health problems and exhibits readiness of engage in sustainable agriculture.
+            📂 Unit 19-Exhibits readiness to plan to overcome challenges faced in agriculture.
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 12-Plans the effective pest management practices to ensure successful crop production.
+            📂 Unit 13-Plans quality food consumption patterns for the healthy life.
+            📂 Unit 14-Innvestigates pre and postharvest techniques for the high quality harvest.
+            📂 Unit 15-Plans methologies of animal husbandry to ensure high qualitative and quantitative yield.
+            📂 Unit 16-Exhibits readinets to apply principles of economics to im- prove the productivity in agricultural enterprises.
+            📂 Unit 17-Exhibits readiness to engage in the sustainable agriculture.
+            📂 Unit 18-Investigates stratergies to minimize health problems and exhibits readiness of engage in sustainable agriculture.
+            📂 Unit 19-Exhibits readiness to plan to overcome challenges faced in agriculture.
+      📂 Arabic
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Art
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Buddhism or Buddhist Civilization
+        📂 Grade 12 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+        📂 Grade 13
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+      📂 Chinese
+        📂 Grade 12 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher guide
+            📂 Unit 01 – Chinese Characters & Pronunciation
+            📂 Unit 02 – Listening & Responding Skills
+            📂 Unit 03 – Reading Comprehension
+            📂 Unit 04 – Communication & Expression Skills
+            📂 Unit 05 – Chinese Grammar & Vocabulary
+            📂 Unit 06 – Word Order & Character Formation
+            📂 Unit 07 – Composition & Expression
+            📂 Unit 08 – Translation Skills
+            📂 Unit 09 – Chinese Cultural Expression
+            📂 Unit 10 – Text-Based Analysis
+        📂 Grade 13 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher Guide
+            📂 Unit 01-Learns Verb  modification with  particles  I
+            📂 Unit 02- Learns Verb  modification with  particles II     and  conjunctions 
+            📂 Unit 03-Learns Passive   sentences and  comparative  sentences 
+            📂 Unit 04-Learns the use of  complements of  time and action 
+            📂 Unit 05-Engages in  Communication  clearly and  effectively
+            📂 Unit 06-  Learns Chinese  culture and lifestyle
+            📂 Unit 07- Engages in  comprehension and  translation
+            📂 Unit 08-  Learns of historical  figures of Chinese  Literature  
+            📂 Unit 09- Reading in Chinese   proverbs , idioms  and stories 
+            📂 Unit 10- Reading from  Chinese  Writers  and literary genres 
+      📂 Christianity or Christian Culture
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Communication and Media Studies
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Dancing
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teachers Guide
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+            📂 Syllabus
+          📂 Tamil Medium
+      📂 Drama
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Economics
+        📂 Grade 12 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher Guide
+            📂 Unit 1 - Comparatively analyses alternative ways of solving basic economic problems
+            📂 Unit 2 - Analyses demand, supply, elasticity and market equilibrium
+            📂 Unit 3 - Investigates government intervention in the free market
+            📂 Unit 4 - Explores the rational behaviour of production units in the market
+            📂 Unit 5 - Shows readiness to prepare national accounts using macroeconomic operations
+            📂 Unit 6 - Analysis of the determination of macro economic equilibrium
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher Guide
+            📂 Unit 1 - Comparatively analyses alternative ways of solving basic economic problems
+              📂 Notes
+            📂 Unit 2 - Analyses demand, supply, elasticity and market equilibrium
+              📂 Notes
+            📂 Unit 3 - Investigates government intervention in the free market
+              📂 Notes
+            📂 Unit 4 - Explores the rational behaviour of production units in the market
+              📂 Notes
+            📂 Unit 5 - Shows readiness to prepare national accounts using macroeconomic operations
+              📂 Notes
+            📂 Unit 6 - Analysis of the determination of macro economic equilibrium
+              📂 Notes
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher Guide
+            📂 Unit 1 - Comparatively analyses alternative ways of solving basic economic problems
+            📂 Unit 2 - Analyses demand, supply, elasticity and market equilibrium
+            📂 Unit 3 - Investigates government intervention in the free market
+            📂 Unit 4 - Explores the rational behaviour of production units in the market
+            📂 Unit 5 - Shows readiness to prepare national accounts using macroeconomic operations
+            📂 Unit 6 - Analysis of the determination of macro economic equilibrium
+        📂 Grade 13 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher Guide
+            📂 Unit 10 - Explores foreign finance affects the Sri Lankan economy
+            📂 Unit 11 - Explains development diversity and shows interest in contributing to sustainable development
+            📂 Unit 12 - Investigates the Sri Lankan economic structure and economic policies
+            📂 Unit 7 - Investigates how money and price levels affect economic activities and the banking system
+            📂 Unit 8 - Investigates government intervention to achieve macro economic objectives
+            📂 Unit 9 - Analyses international trade theories and their impact on Sri Lanka’s economy
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher Guide
+            📂 Unit 10 - Explores foreign finance affects the Sri Lankan economy
+              📂 Notes
+            📂 Unit 11 - Explains development diversity and shows interest in contributing to sustainable development
+              📂 Notes
+            📂 Unit 12 - Investigates the Sri Lankan economic structure and economic policies
+              📂 Notes
+            📂 Unit 7 - Investigates how money and price levels affect economic activities and the banking system
+              📂 Notes
+            📂 Unit 8 - Investigates government intervention to achieve macro economic objectives
+              📂 Notes
+            📂 Unit 9 - Analyses international trade theories and their impact on Sri Lanka’s economy
+              📂 Notes
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher Guide
+            📂 Unit 10 - Explores foreign finance affects the Sri Lankan economy
+            📂 Unit 11 - Explains development diversity and shows interest in contributing to sustainable development
+            📂 Unit 12 - Investigates the Sri Lankan economic structure and economic policies
+            📂 Unit 7 - Investigates how money and price levels affect economic activities and the banking system
+            📂 Unit 8 - Investigates government intervention to achieve macro economic objectives
+            📂 Unit 9 - Analyses international trade theories and their impact on Sri Lanka’s economy
+      📂 English
+        📂 Grade 12 
+          📂 English Medium
+        📂 Grade 13
+          📂 English Medium
+      📂 French
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Geography
+        📂 Grade 12 
+          📂 English Medium
+            📂 Teacher Guide
+            📂 Unit 1 - Basic concepts of Geography
+            📂 Unit 10 - Main Settlement Types
+            📂 Unit 11 - World Urbanization
+            📂 Unit 12 - Urbanization and Problems in Sri Lanka
+            📂 Unit 13 - World Agriculture
+            📂 Unit 14 - Importance of Practical Geography
+            📂 Unit 15 - Importance of cartographical techniques
+            📂 Unit 16 - Physical and human landscape depicted in a map
+            📂 Unit 17 - Information contained in a map
+            📂 Unit 2 - Nature of Physical Geography
+            📂 Unit 3 - Geo System
+            📂 Unit 4 - Earth's Landscape and its conservation
+            📂 Unit 5 - Geomorphic processes
+            📂 Unit 6 - Weather and Climate
+            📂 Unit 7 - Uniqueness of Sri Lanka's climate
+            📂 Unit 8 - Nature of Human Geography
+            📂 Unit 9 - Characteristics of Population
+          📂 Sinhala Medium
+            📂 Teacher Guide
+            📂 Unit 1 - Basic concepts of Geography
+            📂 Unit 10 - Main Settlement Types
+            📂 Unit 11 - World Urbanization
+            📂 Unit 12 - Urbanization and Problems in Sri Lanka
+            📂 Unit 13 - World Agriculture
+            📂 Unit 14 - Importance of Practical Geography
+            📂 Unit 15 - Importance of cartographical techniques
+            📂 Unit 16 - Physical and human landscape depicted in a mapPhysical and human landscape depicted in a map
+            📂 Unit 17 - Information contained in a map
+            📂 Unit 2 - Nature of Physical Geography 
+            📂 Unit 3 - Geo System
+            📂 Unit 4 - Earth's Landscape and its conservation
+            📂 Unit 5 - Geomorphic processes
+            📂 Unit 6 - Weather and Climate
+            📂 Unit 7 - Uniqueness of Sri Lanka's climate
+            📂 Unit 8 - Nature of Human Geography
+            📂 Unit 9 - Characteristics of Population
+          📂 Tamil Medium
+            📂 Teacher Guide
+            📂 Unit 1 - Basic concepts of Geography
+            📂 Unit 10 - Main Settlement Types
+            📂 Unit 11 - World Urbanization
+            📂 Unit 12 - Urbanization and Problems in Sri Lanka
+            📂 Unit 13 - World Agriculture
+            📂 Unit 14 - Importance of Practical Geography
+            📂 Unit 15 -  Importance of cartographical techniques
+            📂 Unit 16 -  Physical and human landscape depicted in a map
+            📂 Unit 17 - Information contained in a map
+            📂 Unit 2 - Nature of Physical Geography
+            📂 Unit 3 - Geo System
+            📂 Unit 4 - Earth's Landscape and its conservation
+            📂 Unit 5 - Geomorphic processes
+            📂 Unit 6 - Weather and Climate
+            📂 Unit 7 - Uniqueness of Sri Lanka's climate
+            📂 Unit 8 - Nature of Human Geography
+            📂 Unit 9 - Characteristics of Population
+        📂 Grade 13
+          📂 English Medium
+            📂 Teacher Guide
+            📂 Unit 1 - Climate Change
+            📂 Unit 10 - Manufacturing Industries
+            📂 Unit 11 - Tourism Industry in Sri Lanka
+            📂 Unit 12 - Globalization
+            📂 Unit 13 - Regional Organizations
+            📂 Unit 14 - Geographical Data
+            📂 Unit 2 - Water Resources and Water Conservation
+            📂 Unit 3 - Water Resources in Sri Lanka
+            📂 Unit 4 - Biomes and Environmental Systems
+            📂 Unit 5 - Natural Hazards and Disasters
+            📂 Unit 6 - Disaster Management in Sri Lanka
+            📂 Unit 7 - International and Regional Organizations
+            📂 Unit 8 - Mining Industry
+            📂 Unit 9 - Mineral Resources in Sri Lanka
+          📂 Sinhala Medium
+            📂 Teacher Guide
+            📂 Unit 1 - Climate Change
+            📂 Unit 10 - Manufacturing Industries
+            📂 Unit 11 - Tourism Industry in Sri Lanka
+            📂 Unit 12 - Globalization
+            📂 Unit 13 - Regional Organizations
+            📂 Unit 14 - Geographical Data
+            📂 Unit 2 - Water Resources and Water Conservation
+            📂 Unit 3 - Water Resources in Sri Lanka
+            📂 Unit 4 - Biomes and Environmental Systems
+            📂 Unit 5 - Natural Hazards and Disasters
+            📂 Unit 6 - Disaster Management in Sri Lanka
+            📂 Unit 7 - International and Regional Organizations
+            📂 Unit 8 - Mining Industry
+            📂 Unit 9 - Mineral Resources in Sri Lanka
+          📂 Tamil Medium
+            📂 Teacher Guide
+            📂 Unit 1 - Climate Change
+            📂 Unit 10 - Manufacturing Industries
+            📂 Unit 11 - Tourism Industry in Sri Lanka
+            📂 Unit 12 - Globalization
+            📂 Unit 13 - Regional Organizations
+            📂 Unit 14 - Geographical Data
+            📂 Unit 2 - Water Resources and Water Conservation
+            📂 Unit 3 - Water Resources in Sri Lanka
+            📂 Unit 4 - Biomes and Environmental Systems
+            📂 Unit 5 - Natural Hazards and Disasters
+            📂 Unit 6 - Disaster Management in Sri Lanka
+            📂 Unit 7 - International and Regional Organizations
+            📂 Unit 8 - Mining Industry
+            📂 Unit 9 - Mineral Resources in Sri Lanka
+      📂 Greek and Roman Civilization
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Hindi
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Hinduism or Hindu Civilization
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 History
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teachers Guide
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil
+      📂 Home Economics
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Information and Communication Technology
+        📂 Grade 12 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teachers Guide
+            📂 Unit 01 - Introduction to ICT
+              📂 Notes
+            📂 Unit 02 - Introduction to Computer
+              📂 Notes
+            📂 Unit 03 - Data Representation
+              📂 Notes
+            📂 Unit 04 - Fundamental of Digital Circuits
+              📂 Notes
+            📂 Unit 05 - Computer Operating Systems
+              📂 Notes
+            📂 Unit 06 - Data Communication and Networking
+              📂 Notes
+            📂 Unit 07 - Systems Analysis and Design
+              📂 Notes
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teachers Guide
+            📂 Unit 01 - Introduction to ICT
+              📂 Notes
+            📂 Unit 02 - Introduction to Computer
+              📂 Notes
+            📂 Unit 03 - Data Representation
+              📂 Notes
+            📂 Unit 04 - Fundamental of Digital Circuits
+              📂 Notes
+            📂 Unit 05 - Computer Operating Systems
+              📂 Notes
+            📂 Unit 06 - Data Communication and Networking
+              📂 Notes
+            📂 Unit 07 - Systems Analysis and Design
+              📂 Notes
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teachers Guide
+            📂 Unit 01 - Introduction to ICT
+              📂 Notes
+            📂 Unit 02 - Introduction to Computer
+              📂 Notes
+            📂 Unit 03 - Data Representation
+              📂 Notes
+            📂 Unit 04 - Fundamental of Digital Circuits
+              📂 Notes
+            📂 Unit 05 - Computer Operating Systems
+              📂 Notes
+            📂 Unit 06 - Data Communication and Networking
+              📂 Notes
+            📂 Unit 07 - Systems Analysis and Design
+              📂 Notes
+        📂 Grade 13 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher Guide
+            📂 Unit 08 - Database Management
+              📂 Notes
+            📂 Unit 09 - Programming
+              📂 Notes
+            📂 Unit 10 - Web Development
+              📂 Notes
+            📂 Unit 11 - Internet of Things
+              📂 Notes
+            📂 Unit 12 - ICT in Business
+              📂 Notes
+            📂 Unit 13 - New Trends and Future Directions of ICT
+              📂 Notes
+            📂 Unit 14 - Project
+              📂 Notes
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher Guide
+            📂 Unit 08 - Database Management
+              📂 Notes
+            📂 Unit 09 - Programming
+              📂 Notes
+            📂 Unit 10 - Web Development
+              📂 Notes
+            📂 Unit 11 - Internet of Things
+              📂 Notes
+            📂 Unit 12 - ICT in Business
+              📂 Notes
+            📂 Unit 13 - New Trends and Future Directions of ICT
+              📂 Notes
+            📂 Unit 14 - Project
+              📂 Notes
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teachers Guide
+            📂 Unit 08 - Database Management
+            📂 Unit 09 - Programming
+            📂 Unit 10 - Web Development
+            📂 Unit 11 - Internet of Things
+            📂 Unit 12 - ICT in Business
+            📂 Unit 13 - New Trends and Future Directions of ICT
+            📂 Unit 14 - Project
+      📂 Islam or Islam Civilization
+        📂 Grade 12 
+          📂 Sinhala Medium
+        📂 Grade 13
+          📂 Sinhala Medium
+      📂 Japanese
+        📂 Grade 12 
+          📂 Englis Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Logic and Scientific Method
+        📂 Grade 12 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01- Exhibits the ability of reaching a conclusion, of the unknown with the help of known facts
+            📂 Unit 02-Indicates by means of different method of analysis, correct logical meaning
+            📂 Unit 03-Inference of conclusions in traditional logic by means of immediate and mediate inferences
+            📂 Unit 04-Studies class Logic and attaining into logical implications
+            📂 Unit 05-Determines the validity of arguments by identifying the formal aspect of deductive systems
+            📂 Unit 10- Formulates scientific methods in terms of critcalthinking in relation to the History of science
+            📂 Unit 11-Application of different scientific methods in practical situation
+            📂 Unit 12-Applies methods to test scientific hypotheses
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01- Exhibits the ability of reaching a conclusion, of the unknown with the help of known facts
+            📂 Unit 02-Indicates by means of different method of analysis, correct logical meaning
+            📂 Unit 03-Inference of conclusions in traditional logic by means of immediate and mediate inferences
+            📂 Unit 04-Studies class Logic and attaining into logical implications
+            📂 Unit 05-Determines the validity of arguments by identifying the formal aspect of deductive systems
+            📂 Unit 10- Formulates scientific methods in terms of critcalthinking in relation to the History of science
+            📂 Unit 11-Application of different scientific methods in practical situation
+            📂 Unit 12-Applies methods to tests cientific hypotheses
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01- Exhibits the ability of reaching a conclusion, of the unknown with the help of known facts
+            📂 Unit 02-Indicates by means of different method of analysis, correct logical meaning
+            📂 Unit 03-Inference of conclusions in traditional logic by means of immediate and mediate inferences
+            📂 Unit 04-Studies class Logic and attaining into logical implications
+            📂 Unit 05-Determines the validity of arguments by identifying the formal aspect of deductive systems
+            📂 Unit 10- Formulates scientific methods in terms of critcalthinking in relation to the History of science
+            📂 Unit 11-Application of different scientific methods in practical situation
+            📂 Unit 12-Applies methods to tests cientific hypotheses
+        📂 Grade 13
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 06-Studies Predicate Calculus
+            📂 Unit 07-Application of logical principles in relation to the function of electronic circuits.
+            📂 Unit 08- Demarcates the nature of logical fallacies while studying critical thinking.
+            📂 Unit 09- Sudies the nature of Law and legal determinations.
+            📂 Unit 13- Uses the concept of probability in practical situations
+            📂 Unit 14-Application of basic features of measurement in scientific research
+            📂 Unit 15-Utilizes statistical methods for increasing desicion making skills
+            📂 Unit 16- Faces future challenges by means of sceintific concept which were nutured before and after the renaissance
+            📂 Unit 17- Participates in scientific tests maintaining its authenticity and validity
+            📂 Unit 18- Faces successfully the challenges posed to society by modern science and technology
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 06-Studies Predicate Calculus
+            📂 Unit 07-Application of logical principles in relation to the function of electronic circuits.
+            📂 Unit 08- Demarcates the nature of logical fallacies while studying critical thinking.
+            📂 Unit 09- Sudies the nature of Law and legal determinations.
+            📂 Unit 13- Uses the concept of probability in practical situations
+            📂 Unit 14-Application of basic features of measurement in scientific research
+            📂 Unit 15-Utilizes statistical methods for increasing desicion making skills
+            📂 Unit 16- Faces future challenges by means of sceintific concept which were nutured before and after the renaissance
+            📂 Unit 17- Participates in scientific tests maintaining its authenticity and validity
+            📂 Unit 18- Faces successfully the challenges posed to society by modern science and technology
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 06-Studies Predicate Calculus
+            📂 Unit 07-Application of logical principles in relation to the function of electronic circuits.
+            📂 Unit 08- Demarcates the nature of logical fallacies while studying critical thinking.
+            📂 Unit 09- Sudies the nature of Law and legal determinations.
+            📂 Unit 13- Uses the concept of probability in practical situations
+            📂 Unit 14-Application of basic features of measurement in scientific research
+            📂 Unit 15-Utilizes statistical methods for increasing desicion making skills
+            📂 Unit 16- Faces future challenges by means of sceintific concept which were nutured before and after the renaissance
+            📂 Unit 17- Participates in scientific tests maintaining its authenticity and validity
+            📂 Unit 18- Faces successfully the challenges posed to society by modern science and technology
+      📂 Malay
+        📂 Grade 12 
+          📂 Englis Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Music
+        📂 Grade 12 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher Guide
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Pali
+        📂 Grade 12 
+          📂 Sinhala Medium
+        📂 Grade 13 
+          📂 Sinhala Medium
+      📂 Political Science
+        📂 Grade 12 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01-Act as a citizen with an understanding of the nature of politics and political science
+            📂 Unit 02- Prepare to study Political Science by identifying the themes of the subject
+            📂 Unit 03- Lays the foundation to a theoretical and practical understanding of the state in which the student is a citizen
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+        📂 Grade 13 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+      📂 Russian
+        📂 Grade 12 
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+        📂 Grade 13
+          📂 English Medium
+          📂 Sinhala Medium
+          📂 Tamil Medium
+      📂 Sanskrit
+        📂 Grade 12 
+          📂 Sinhala Medium
+        📂 Grade 13
+          📂 Sinhala Medium
+      📂 Sinhala
+        📂 Grade 12 
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01-Ancient Human Life and Cultural Development
+            📂 Unit 02 – Classical Sinhala Poetry
+            📂 Unit 03 – Sinhala Novel
+            📂 Unit 04 – Sinhala Short Stories
+            📂 Unit 05 – Sinhala Drama
+            📂 Unit 06 – Modern Sinhala Poetry
+            📂 Unit 07 – Sinhala Language Structure & Usage
+            📂 Unit 08 – Sinhala Grammar
+            📂 Unit 09 – Writing, Analysis & Summary Skills
+        📂 Grade 13 
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher Guide
+            📂 Unit 01 – Modern Sinhala Prose
+            📂 Unit 02 – Literary Criticism & Appreciation
+            📂 Unit 03 – Advanced Sinhala Poetry
+            📂 Unit 04 – Advanced Sinhala Drama
+            📂 Unit 05 – Language & Society
+            📂 Unit 06 – Media, Communication & Language
+            📂 Unit 07 – Research Writing & Academic Skills
+            📂 Unit 08 – Advanced Grammar & Language Application
+      📂 Tamil
+        📂 Grade 12 
+          📂 Tamil Medium
+        📂 Grade 13 
+          📂 Tamil Medium
+    📂 Commerce Stream
+      📂 Accounting
+        📂 Grade 12 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01 - Analyses Accounting and its need
+            📂 Unit 02 - Presents transactions and events of a business through an accounting equation
+            📂 Unit 03 - Records business transactions and events based on the double entry system
+            📂 Unit 04 - Posts transactions to the ledger using prime entry books
+            📂 Unit 05 - Uses accounting concepts by analysing the basis of financial accounting
+            📂 Unit 06 - Prepares financial statement of a sole proprietorship business
+            📂 Unit 07 - Prepares Financial Statements of manufacturing business
+            📂 Unit 08 - Prepares Financial Statements of a “not for profit making” organization
+            📂 Unit 09 - Prepares Financial Statements of a business using the imcomplete records
+            📂 Unit 10 -  Prepares Financial Statements of a partnership business
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01 - Analyses Accounting and its need
+              📂 Notes
+            📂 Unit 02 - Presents transactions and events of a business through an accounting equation
+              📂 Notes
+            📂 Unit 03 - Records business transactions and events based on the double entry system
+              📂 Notes
+            📂 Unit 04 - Posts transactions to the ledger using prime entry books
+              📂 Notes
+            📂 Unit 05 - Uses accounting concepts by analysing the basis of financial accounting
+              📂 Notes
+            📂 Unit 06 - Prepares financial statement of a sole proprietorship business
+              📂 Notes
+            📂 Unit 07 - Prepares Financial Statements of manufacturing business
+              📂 Notes
+            📂 Unit 08 - Prepares Financial Statements of a “not for profit making” organization
+              📂 Notes
+            📂 Unit 09 - Prepares Financial Statements of a business using the imcomplete records
+              📂 Notes
+            📂 Unit 10 - Prepares Financial Statements of a partnership business
+              📂 Notes
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01 - Analyses Accounting and its need
+            📂 Unit 02 - Presents transactions and events of a business through an accounting equation
+            📂 Unit 03 - Records business transactions and events based on the double entry system
+            📂 Unit 04 - Posts transactions to the ledger using prime entry books
+            📂 Unit 05 - Uses accounting concepts by analysing the basis of financial accounting
+            📂 Unit 06 - Prepares financial statement of a sole proprietorship business
+            📂 Unit 07 - Prepares Financial Statements of manufacturing business
+            📂 Unit 08 - Prepares Financial Statements of a “not for profit making” organization
+            📂 Unit 09 - Prepares Financial Statements of a business using the imcomplete records
+            📂 Unit 10 - Prepares Financial Statements of a partnership business
+        📂 Grade 13
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 11 - Prepares Financial Statements of a Limited liability company
+            📂 Unit 12 - Prepares financial statements using Sri Lanka Accounting Standards.
+            📂 Unit 13 - Aids management decisions using ratio analysis.
+            📂 Unit 14 - Evaluates basic concepts of Management Accounting
+            📂 Unit 15 - Supports marginal decisions through cost behaviour and CVP analysis
+            📂 Unit 16 - Contributes to capital investment decisions
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 11 - Prepares Financial Statements of a Limited liability company
+              📂 Notes
+            📂 Unit 12 - Prepares financial statements using Sri Lanka Accounting Standards
+              📂 Notes
+            📂 Unit 13 - Aids management decisions using ratio analysis
+              📂 Notes
+            📂 Unit 14 - Evaluates basic concepts of Management Accounting
+              📂 Notes
+            📂 Unit 15 - Supports marginal decisions through cost behaviour and CVP analysis.
+              📂 Notes
+            📂 Unit 16 - Contributes to capital investment decisions
+              📂 Notes
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 11 - Prepares Financial Statements of a Limited liability company
+            📂 Unit 12 - Prepares financial statements using Sri Lanka Accounting Standards
+            📂 Unit 13 - Aids management decisions using ratio analysis
+            📂 Unit 14 - Evaluates basic concepts of Management Accounting
+            📂 Unit 15 - Supports marginal decisions through cost behaviour and CVP analysis
+            📂 Unit 16 - Contributes to capital investment decisions
+      📂 Business Studies
+        📂 Grade 12 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01 - Inquires the basis of business and the environment in which it perform
+            📂 Unit 02 - Examines how businesses use social responsibility and ethics to adapt to the environment
+            📂 Unit 03 - Confims the necessity of maintaining businesses having relationships with the government
+            📂 Unit 04 - Confirms the need for different business organizations and their formal establishment and operation
+            📂 Unit 05 - Evaluates the contribution of entrepreneurship in social, economic and personal development
+            📂 Unit 06 - Evaluates the contribution of small and medium businesses for economic development
+            📂 Unit 07 - Evaluates how money and financial institutions support business survival and growth
+            📂 Unit 08 - confirms the necessity of insurance for the existence of businesses
+            📂 Unit 09 - Highlights the need for effective communication in business success
+            📂 Unit 10 - Investigates the contribution of logistics for the success of businesses
+            📂 Unit 11 - Inquiries the contribution of trade in distributing the products 
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01 - Inquires the basis of business and the environment in which it perform
+              📂 Notes
+            📂 Unit 02 - Examines how businesses use social responsibility and ethics to adapt to the environment
+              📂 Notes
+            📂 Unit 03 - Confims the necessity of maintaining businesses having relationships with the government
+              📂 Notes
+            📂 Unit 04 - Confirms the need for different business organizations and their formal establishment and operation
+              📂 Notes
+            📂 Unit 05 - Evaluates the contribution of entrepreneurship in social, economic and personal development
+              📂 Notes
+            📂 Unit 06 - Evaluates the contribution of small and medium businesses for economic development
+              📂 Notes
+            📂 Unit 07 - Evaluates how money and financial institutions support business survival and growth
+              📂 Notes
+            📂 Unit 08 - confirms the necessity of insurance for the existence of businesses
+              📂 Notes
+            📂 Unit 09 - Highlights the need for effective communication in business success
+              📂 Notes
+            📂 Unit 10 - Investigates the contribution of logistics for the success of businesses
+              📂 Notes
+            📂 Unit 11 - Inquiries the contribution of trade in distributing the products
+              📂 Notes
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 01 - Inquires the basis of business and the environment in which it perform
+            📂 Unit 02 - Examines how businesses use social responsibility and ethics to adapt to the environment
+            📂 Unit 03 - Confims the necessity of maintaining businesses having relationships with the government
+            📂 Unit 04 - Confirms the need for different business organizations and their formal establishment and operation
+            📂 Unit 05 - Evaluates the contribution of entrepreneurship in social, economic and personal development
+            📂 Unit 06 - Evaluates the contribution of small and medium businesses for economic development
+            📂 Unit 07 - Evaluates how money and financial institutions support business survival and growth
+            📂 Unit 08 - confirms the necessity of insurance for the existence of businesses
+            📂 Unit 09 - Highlights the need for effective communication in business success
+            📂 Unit 10 - Investigates the contribution of logistics for the success of businesses
+            📂 Unit 11 - Inquiries the contribution of trade in distributing the products
+        📂 Grade 13
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 12 - Highlights the importance of management in achieving individual and organizational goals
+              📂 Notes
+            📂 Unit 13 - Evaluates the contribution of operational management for the success of businesses
+              📂 Notes
+            📂 Unit 14 - Evaluates the contribution of marketing management for the success of businesses
+              📂 Notes
+            📂 Unit 15 - Examines the ways of using financial management for the success of businesses
+              📂 Notes
+            📂 Unit 16 - Examines the way of using human resource effectively for the success of businessess
+              📂 Notes
+            📂 Unit 17 - Inquires how information systems contribute for the success of businesses
+              📂 Notes
+            📂 Unit 18 - Prerpares a business plan to start and expand a business.
+              📂 Notes
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 12 - Highlights the importance of management in achieving individual and organizational goals
+              📂 Notes
+            📂 Unit 13 - Evaluates the contribution of operational management for the success of businesses
+              📂 Notes
+            📂 Unit 14 - Evaluates the contribution of marketing management for the success of businesses
+              📂 Notes
+            📂 Unit 15 - Examines the ways of using financial management for the success of businesses
+              📂 Notes
+            📂 Unit 16 - Examines the way of using human resource effectively for the success of businesses
+              📂 Notes
+            📂 Unit 17 - Inquires how information systems contribute for the success of businesses
+              📂 Notes
+            📂 Unit 18 - Prepares a business plan to start and expand a business.
+              📂 Notes
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 12 - Highlights the importance of management in achieving individual and organizational goals
+            📂 Unit 13 - Evaluates the contribution of operational management for the success of businesses
+            📂 Unit 14 - Evaluates the contribution of marketing management for the success of businesses
+            📂 Unit 15 - Examines the ways of using financial management for the success of businesses
+            📂 Unit 16 - Examines the way of using human resource effectively for the success of businessess
+            📂 Unit 17 - Inquires how information systems contribute for the success of businesses
+            📂 Unit 18 - Prepares a business plan to start and expand a business.
+      📂 Economics
+        📂 Grade 12 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 1 - Comparatively analyses alternative ways of solving basic economic problems
+            📂 Unit 2 - Analyses demand, supply, elasticity and market equilibrium
+            📂 Unit 3 - Investigates government intervention in the free market
+            📂 Unit 4 - Explores the rational behaviour of production units in the market
+            📂 Unit 5 - Shows readiness to prepare national accounts using macroeconomic operations
+            📂 Unit 6 - Analysis of the determination of macro economic equilibrium
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 1 - Comparatively analyses alternative ways of solving basic economic problems
+              📂 Notes
+            📂 Unit 2 - Analyses demand, supply, elasticity and market equilibrium
+              📂 Notes
+            📂 Unit 3 - Investigates government intervention in the free market
+              📂 Notes
+            📂 Unit 4 - Explores the rational behaviour of production units in the market
+              📂 Notes
+            📂 Unit 5 - Shows readiness to prepare national accounts using macroeconomic operations
+              📂 Notes
+            📂 Unit 6 - Analysis of the determination of macro economic equilibrium
+              📂 Notes
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 1 - Comparatively analyses alternative ways of solving basic economic problems
+            📂 Unit 2 - Analyses demand, supply, elasticity and market equilibrium
+            📂 Unit 3 - Investigates government intervention in the free market.
+            📂 Unit 4 - Explores the rational behaviour of production units in the market
+            📂 Unit 5 - Shows readiness to prepare national accounts using macroeconomic operations
+            📂 Unit 6 - Analysis of the determination of macro economic equilibrium
+        📂 Grade 13 
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 10 - Explores foreign finance affects the Sri Lankan economy
+            📂 Unit 11 - Explains development diversity and shows interest in contributing to sustainable development
+            📂 Unit 12 - Investigates the Sri Lankan economic structure and economic policies
+            📂 Unit 7 - Investigates how money and price levels affect economic activities and the banking system
+            📂 Unit 8 - Investigates government intervention to achieve macro economic objectives
+            📂 Unit 9 - Analyses international trade theories and their impact on Sri Lanka’s economy
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 10 - Explores foreign finance affects the Sri Lankan economy
+              📂 Notes
+            📂 Unit 11 - Explains development diversity and shows interest in contributing to sustainable development
+              📂 Notes
+            📂 Unit 12 - Investigates the Sri Lankan economic structure and economic policies
+              📂 Notes
+            📂 Unit 7 - Investigates how money and price levels affect economic activities and the banking system
+              📂 Notes
+            📂 Unit 8 - Investigates government intervention to achieve macro economic objectives
+              📂 Notes
+            📂 Unit 9 - Analyses international trade theories and their impact on Sri Lanka’s economy
+              📂 Notes
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 10 - Explores foreign finance affects the Sri Lankan economy
+            📂 Unit 11 - Explains development diversity and shows interest in contributing to sustainable development
+            📂 Unit 12 - Investigates the Sri Lankan economic structure and economic policies
+            📂 Unit 7 - Investigates how money and price levels affect economic activities and the banking system
+            📂 Unit 8 - Investigates government intervention to achieve macro economic objectives
+            📂 Unit 9 - Analyses international trade theories and their impact on Sri Lanka’s economy
+    📂 General English
+    📂 GIT
+    📂 Science stream
+      📂 Biology
+        📂 Grade 12
+          📂 English Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01-Introduction to Biology
+            📂 Unit 02-Chemical and Cellular Basis of Life
+            📂 Unit 03-Evolution and Diversity of Organisms
+            📂 Unit 04-Plant Form and Function
+            📂 Unit 05-Animal Form and Function(1)
+          📂 Sinhala Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01-Introduction to Biology
+            📂 Unit 02-Chemical and Cellular Basis of Life
+            📂 Unit 03-Evolution and Diversity of Organisms
+            📂 Unit 04-Plant Form and Function
+            📂 Unit 05-Animal Form and Function(1)
+          📂 Tamil Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01-Introduction to Biology
+            📂 Unit 02-Chemical and Cellular Basis of Life
+            📂 Unit 03-Evolution and Diversity of Organisms
+            📂 Unit 04-Plant Form and Function
+            📂 Unit 05-Animal Form and Function(1)
+        📂 Grade 13
+          📂 English Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 05-Animal Form and Function(2)
+            📂 Unit 06-Genetics
+            📂 Unit 07-Molecular Biology & Recombinant DNA Technology
+            📂 Unit 08-Environmental Biology
+            📂 Unit 09-Microbiology
+            📂 Unit 10-Applied Biology
+          📂 Sinhala Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 05-Animal Form and Function(2)
+            📂 Unit 06-Genetics
+            📂 Unit 07-Molecular Biology & Recombinant DNA Technology
+            📂 Unit 08-Environmental Biology
+            📂 Unit 09-Microbiology
+            📂 Unit 10-Applied Biology
+          📂 Tamil Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 05-Animal Form and Function(2)
+            📂 Unit 06-Genetics
+            📂 Unit 07-Molecular Biology & Recombinant DNA Technology
+            📂 Unit 08-Environmental Biology
+            📂 Unit 09-Microbiology
+            📂 Unit 10-Applied Biology
+      📂 Chemistry
+        📂 Grade 12
+          📂 English Medium
+            📂 Syllabus 
+            📂 Teracher's Guide
+            📂 Unit 01- Atomic Structure
+            📂 Unit 02-Structure and Bonding
+            📂 Unit 03- Chemical Calculations
+            📂 Unit 04- Gaseous State of Matter
+            📂 Unit 05- Energetics
+            📂 Unit 06- Chemistry of s, p and d‑block elements
+            📂 Unit 07- Basic Concepts of Organic Chemistry
+            📂 Unit 08- Hydrocarbons and Halohydrocarbons
+            📂 Unit 09- Oxygen‑containing Organic Compounds
+            📂 Unit 10- Nitrogen‑containing Organic Compounds
+          📂 Sinhala Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01- Atomic Structure
+            📂 Unit 02-Structure and Bonding
+            📂 Unit 03- Chemical Calculations
+            📂 Unit 04- Gaseous State of Matter
+            📂 Unit 05- Energetics
+            📂 Unit 06- Chemistry of s, p and d‑block elements
+            📂 Unit 07- Basic Concepts of Organic Chemistry
+            📂 Unit 08- Hydrocarbons and Halohydrocarbons
+            📂 Unit 09- Oxygen‑containing Organic Compounds
+            📂 Unit 10- Nitrogen‑containing Organic Compounds
+          📂 Tamil Medium 
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01- Atomic Structure
+            📂 Unit 02-Structure and Bonding
+            📂 Unit 03- Chemical Calculations
+            📂 Unit 04- Gaseous State of Matter
+            📂 Unit 05- Energetics
+            📂 Unit 06- Chemistry of s, p and d‑block elements
+            📂 Unit 07- Basic Concepts of Organic Chemistry
+            📂 Unit 08- Hydrocarbons and Halohydrocarbons
+            📂 Unit 09- Oxygen‑containing Organic Compounds
+            📂 Unit 10- Nitrogen‑containing Organic Compounds
+        📂 Grade 13
+          📂 English Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 11- Chemical Kinetics
+            📂 Unit 12- Chemical Equilibrium
+            📂 Unit 13- Electrochemistry
+            📂 Unit 14- Industrial Chemistry & Environmental Pollution
+          📂 Sinhala Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 11- Chemical Kinetics
+            📂 Unit 12- Chemical Equilibrium
+            📂 Unit 13- Electrochemistry
+            📂 Unit 14- Industrial Chemistry & Environmental Pollution
+          📂 Tamil Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 11- Chemical Kinetics
+            📂 Unit 12- Chemical Equilibrium
+            📂 Unit 13- Electrochemistry
+            📂 Unit 14- Industrial Chemistry & Environmental Pollution
+      📂 Combined Maths
+        📂 Grade 12
+          📂 English Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01 – Real Number System
+            📂 Unit 02 – Algebra of Sets
+            📂 Unit 03 – Mathematical Logic
+            📂 Unit 04 – One-Variable Functions
+            📂 Unit 05 – Polynomials
+            📂 Unit 06 – Basics of Statistics
+            📂 Unit 07 – Data and Data Representation
+            📂 Unit 08 – Straight Lines
+            📂 Unit 09 – Rational Functions & Logarithm
+            📂 Unit 10 – Methods of Proofs
+            📂 Unit 11 – Measures of Central Tendency
+            📂 Unit 12 – Inequalities
+            📂 Unit 13 – Limits
+            📂 Unit 14 – Frequency Distribution
+            📂 Unit 15 – Random Experiments and Probability
+            📂 Unit 16 – Permutation and Combination
+          📂 Sinhala Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01 – Real Number System
+            📂 Unit 02 – Algebra of Sets
+            📂 Unit 03 – Mathematical Logic
+            📂 Unit 04 – One-Variable Functions
+            📂 Unit 05 – Polynomials
+            📂 Unit 06 – Basics of Statistics
+            📂 Unit 07 – Data and Data Representation
+            📂 Unit 08 – Straight Lines
+            📂 Unit 09 – Rational Functions & Logarithm
+            📂 Unit 10 – Methods of Proofs
+            📂 Unit 11 – Measures of Central Tendency
+            📂 Unit 12 – Inequalities
+            📂 Unit 13 – Limits
+            📂 Unit 14 – Frequency Distribution
+            📂 Unit 15 – Random Experiments and Probability
+            📂 Unit 16 – Permutation and Combination
+          📂 Tamil Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01 – Real Number System
+            📂 Unit 02 – Algebra of Sets
+            📂 Unit 03 – Mathematical Logic
+            📂 Unit 04 – One-Variable Functions
+            📂 Unit 05 – Polynomials
+            📂 Unit 06 – Basics of Statistics
+            📂 Unit 07 – Data and Data Representation
+            📂 Unit 08 – Straight Lines
+            📂 Unit 09 – Rational Functions & Logarithm
+            📂 Unit 10 – Methods of Proofs
+            📂 Unit 11 – Measures of Central Tendency
+            📂 Unit 12 – Inequalities
+            📂 Unit 13 – Limits
+            📂 Unit 14 – Frequency Distribution
+            📂 Unit 15 – Random Experiments and Probability
+            📂 Unit 16 – Permutation and Combination
+        📂 Grade 13
+          📂 English Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01 – Derivatives
+            📂 Unit 02 – Probability
+            📂 Unit 03 – Integration
+            📂 Unit 04 – Discrete Probability Distribution
+            📂 Unit 05 – Linear Programming
+            📂 Unit 06 – Determinants
+            📂 Unit 07 – Matrices
+            📂 Unit 08 – Binomial Expansion
+            📂 Unit 09 – Series
+            📂 Unit 10 – Continuous Probability Distribution
+            📂 Unit 11 – Networks
+          📂 Sinhala Medium 
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01 – Derivatives
+            📂 Unit 02 – Probability
+            📂 Unit 03 – Integration
+            📂 Unit 04 – Discrete Probability Distribution
+            📂 Unit 05 – Linear Programming
+            📂 Unit 06 – Determinants
+            📂 Unit 07 – Matrices
+            📂 Unit 08 – Binomial Expansion
+            📂 Unit 09 – Series
+            📂 Unit 10 – Continuous Probability Distribution
+            📂 Unit 11 – Networks
+          📂 Tamil Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01 – Derivatives
+            📂 Unit 02 – Probability
+            📂 Unit 03 – Integration
+            📂 Unit 04 – Discrete Probability Distribution
+            📂 Unit 05 – Linear Programming
+            📂 Unit 06 – Determinants
+            📂 Unit 07 – Matrices
+            📂 Unit 08 – Binomial Expansion
+            📂 Unit 09 – Series
+            📂 Unit 10 – Continuous Probability Distribution
+            📂 Unit 11 – Networks
+      📂 Physics
+        📂 Grade 12
+          📂 English Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01 – Measurement
+            📂 Unit 02 – Mechanics
+            📂 Unit 03 – Oscillations and Waves
+            📂 Unit 04 – Thermal Physics
+          📂 Sinhala Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 01 – Measurement
+            📂 Unit 02 – Mechanics
+            📂 Unit 03 – Oscillations and Waves
+            📂 Unit 04 – Thermal Physics
+          📂 Tamil Medium 
+            📂 Syllabus 
+            📂 Teacher's Guide 
+            📂 Unit 01 – Measurement
+            📂 Unit 02 – Mechanics
+            📂 Unit 03 – Oscillations and Waves
+            📂 Unit 04 – Thermal Physics
+        📂 Grade 13
+          📂 English Medium 
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 05 – Gravitational Field
+            📂 Unit 06 – Electrostatic Field
+            📂 Unit 07 – Magnetic Field
+            📂 Unit 08 – Current Electricity
+            📂 Unit 09 – Electronics
+            📂 Unit 10 – Mechanical Properties of Matter
+            📂 Unit 11 – Matter and Radiation
+          📂 Sinhala Medium 
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 05 – Gravitational Field
+            📂 Unit 06 – Electrostatic Field
+            📂 Unit 07 – Magnetic Field
+            📂 Unit 08 – Current Electricity
+            📂 Unit 09 – Electronics
+            📂 Unit 10 – Mechanical Properties of Matter
+            📂 Unit 11 – Matter and Radiation
+          📂 Tamil Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 05 – Gravitational Field
+            📂 Unit 06 – Electrostatic Field
+            📂 Unit 07 – Magnetic Field
+            📂 Unit 08 – Current Electricity
+            📂 Unit 09 – Electronics
+            📂 Unit 10 – Mechanical Properties of Matter
+            📂 Unit 11 – Matter and Radiation
+    📂 Technology Stream
+      📂 BST
+        📂 Grade 12
+          📂 English Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 1 – Basic Concepts of Biosystems
+            📂 Unit 2 – Biomaterials
+            📂 Unit 3 – Crop Production Technology
+            📂 Unit 4 – Animal Production Technology
+            📂 Unit 5 – Agro-environmental Technology
+          📂 Sinhala Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 1 – Basic Concepts of Biosystems
+            📂 Unit 2 – Biomaterials
+            📂 Unit 3 – Crop Production Technology
+            📂 Unit 4 – Animal Production Technology
+            📂 Unit 5 – Agro-environmental Technology
+          📂 Tamil Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 1 – Basic Concepts of Biosystems
+            📂 Unit 2 – Biomaterials
+            📂 Unit 3 – Crop Production Technology
+            📂 Unit 4 – Animal Production Technology
+            📂 Unit 5 – Agro-environmental Technology
+        📂 Grade 13
+          📂 English Medium
+            📂 Syllabus 
+            📂 Teacher's Guide 
+            📂 Unit 1 – Advanced Crop Production Technology
+            📂 Unit 2 – Advanced Animal Production Technology
+            📂 Unit 3 – Food Science and Technology
+            📂 Unit 4 – Microbiology and Biotechnology
+            📂 Unit 5 – Agri-business and Entrepreneurship
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 1 – Advanced Crop Production Technology
+            📂 Unit 2 – Advanced Animal Production Technology
+            📂 Unit 3 – Food Science and Technology
+            📂 Unit 4 – Microbiology and Biotechnology
+            📂 Unit 5 – Agri-business and Entrepreneurship
+          📂 Tamil Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 1 – Advanced Crop Production Technology
+            📂 Unit 2 – Advanced Animal Production Technology
+            📂 Unit 3 – Food Science and Technology
+            📂 Unit 4 – Microbiology and Biotechnology
+            📂 Unit 5 – Agri-business and Entrepreneurship
+      📂 ET
+        📂 Grade 12
+          📂 English Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 1 – Basic Concepts of Engineering Technology
+            📂 Unit 2 – Engineering Materials
+            📂 Unit 3 – Applied Forces in Engineering
+            📂 Unit 4 – Heat and Energy in Engineering
+            📂 Unit 5 – Basic Electrical and Electronic Technology
+            📂 Unit 6 – Engineering Workshop Technology
+            📂 Unit 7 – Engineering Graphics (Technical Drawing)
+          📂 Sinhala Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 1 – Basic Concepts of Engineering Technology
+            📂 Unit 2 – Engineering Materials
+            📂 Unit 3 – Applied Forces in Engineering
+            📂 Unit 4 – Heat and Energy in Engineering
+            📂 Unit 5 – Basic Electrical and Electronic Technology
+            📂 Unit 6 – Engineering Workshop Technology
+            📂 Unit 7 – Engineering Graphics (Technical Drawing)
+          📂 Tamil Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 1 – Basic Concepts of Engineering Technology
+            📂 Unit 2 – Engineering Materials
+            📂 Unit 3 – Applied Forces in Engineering
+            📂 Unit 4 – Heat and Energy in Engineering
+            📂 Unit 5 – Basic Electrical and Electronic Technology
+            📂 Unit 6 – Engineering Workshop Technology
+            📂 Unit 7 – Engineering Graphics (Technical Drawing)
+        📂 Grade 13
+          📂 English Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 1 – Engineering Structures and Mechanisms
+            📂 Unit 2 – Properties and Testing of Engineering Materials
+            📂 Unit 3 – Electrical Power and Machines
+            📂 Unit 4 – Electronic Systems and Digital Technology
+            📂 Unit 5 – Fluid Mechanics and Hydraulic Systems
+            📂 Unit 6 – Engineering Measurement and Control Systems
+            📂 Unit 7 – Engineering Project (Design & Practical Applications)
+          📂 Sinhala Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 1 – Engineering Structures and Mechanisms
+            📂 Unit 2 – Properties and Testing of Engineering Materials
+            📂 Unit 3 – Electrical Power and Machines
+            📂 Unit 4 – Electronic Systems and Digital Technology
+            📂 Unit 5 – Fluid Mechanics and Hydraulic Systems
+            📂 Unit 6 – Engineering Measurement and Control Systems
+            📂 Unit 7 – Engineering Project (Design & Practical Applications)
+          📂 Tamil Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 1 – Engineering Structures and Mechanisms
+            📂 Unit 2 – Properties and Testing of Engineering Materials
+            📂 Unit 3 – Electrical Power and Machines
+            📂 Unit 4 – Electronic Systems and Digital Technology
+            📂 Unit 5 – Fluid Mechanics and Hydraulic Systems
+            📂 Unit 6 – Engineering Measurement and Control Systems
+            📂 Unit 7 – Engineering Project (Design & Practical Applications)
+      📂 SFT
+        📂 Grade 12
+          📂 English Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 1 – Nature of Science and Technology
+            📂 Unit 2 – Measurement and Data Handling
+            📂 Unit 3 – Properties of Matter
+            📂 Unit 4 – Energy and Energy Transformations
+            📂 Unit 5 – Structure and Function of Materials
+            📂 Unit 6 – Basic Electrical and Electronic Technology
+            📂 Unit 7 – Environment, Resources, and Sustainability
+          📂 Sinhala Medium
+            📂 Syllabus 
+            📂 Teacher's Guide
+            📂 Unit 1 – Nature of Science and Technology
+            📂 Unit 2 – Measurement and Data Handling
+            📂 Unit 3 – Properties of Matter
+            📂 Unit 4 – Energy and Energy Transformations
+            📂 Unit 5 – Structure and Function of Materials
+            📂 Unit 6 – Basic Electrical and Electronic Technology
+            📂 Unit 7 – Environment, Resources, and Sustainability
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 1 – Nature of Science and Technology
+            📂 Unit 2 – Measurement and Data Handling
+            📂 Unit 3 – Properties of Matter
+            📂 Unit 4 – Energy and Energy Transformations
+            📂 Unit 5 – Structure and Function of Materials
+            📂 Unit 6 – Basic Electrical and Electronic Technology
+            📂 Unit 7 – Environment, Resources, and Sustainability
+        📂 Grade 13
+          📂 English Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 1 – Advanced Mechanics and Materials
+            📂 Unit 2 – Advanced Energy Systems
+            📂 Unit 3 – Electronics and Communication Technology
+            📂 Unit 4 – Information and Communication Technology Applications
+            📂 Unit 5 – Biotechnology and Applied Sciences
+            📂 Unit 6 – Technology for Sustainable Development
+            📂 Unit 7 – Research Project / Practical Investigations
+          📂 Sinhala Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 1 – Advanced Mechanics and Materials
+            📂 Unit 2 – Advanced Energy Systems
+            📂 Unit 3 – Electronics and Communication Technology
+            📂 Unit 4 – Information and Communication Technology Applications
+            📂 Unit 5 – Biotechnology and Applied Sciences
+            📂 Unit 6 – Technology for Sustainable Development
+            📂 Unit 7 – Research Project / Practical Investigations
+          📂 Tamil Medium
+            📂 Syllabus
+            📂 Teacher's Guide
+            📂 Unit 1 – Advanced Mechanics and Materials
+            📂 Unit 2 – Advanced Energy Systems
+            📂 Unit 3 – Electronics and Communication Technology
+            📂 Unit 4 – Information and Communication Technology Applications
+            📂 Unit 5 – Biotechnology and Applied Sciences
+            📂 Unit 6 – Technology for Sustainable Development
+            📂 Unit 7 – Research Project / Practical Investigations
+  📂 O/L Subjects
+    📂 Agriculture & Food Technology
+      📂 Grade 10
+    📂 Art
+    📂 Buddhism
+    📂 Christianity
+    📂 Civic
+    📂 Civil Technology
+    📂 Commerce
+    📂 Dance
+    📂 Design & Technology
+    📂 Drama
+    📂 English
+    📂 English Literature
+    📂 Geography
+    📂 Health
+    📂 Hinduism
+    📂 History
+    📂 Home Science
+    📂 ICT
+    📂 Islam
+    📂 Mathematics 
+    📂 Mechanical Technology
+    📂 Music
+    📂 Science
+    📂 Sinhala
+    📂 Tamil
+  📂 Primary Class Subjects
+    📂 Buddhism 
+      📂 Grade 1
+        📂 English Medium
+        📂 Sinhala Medium
+        📂 Tamil Medium
+      📂 Grade 2
+        📂 English Medium
+        📂 Sinhala Medium
+        📂 Tamil Medium
+      📂 Grade 3
+        📂 English Medium
+        📂 Sinhala Medium
+        📂 Tamil Medium
+      📂 Grade 4
+        📂 English Medium
+        📂 Sinhala  Medium
+        📂 Tamil Medium
+      📂 Grade 5
+        📂 English Medium
+        📂 Sinhala Medium
+        📂 Tamil Medium
+    📂 English
+      📂 Grade 1
+        📂 English Medium
+        📂 Sinhala Medium
+        📂 Tamil Medium
+      📂 Grade 2
+        📂 English Medium
+        📂 Sinhala Medium
+        📂 Tamil Medium
+      📂 Grade 3
+        📂 English Medium
+        📂 Sinhala Medium
+        📂 Tamil Medium
+      📂 Grade 4
+        📂 English Medium
+        📂 Sinhala Medium
+        📂 Tamil Medium
+      📂 Grade 5
+        📂 English Medium
+        📂 Sinhala Medium
+        📂 Tamil Medium
+    📂 Environmental Education
+    📂 Mathematics
+    📂 Sinhala
+    📂 Tamil

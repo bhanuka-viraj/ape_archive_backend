@@ -33,15 +33,9 @@ export const libraryController = new Elysia()
     "/browse",
     async ({ query, set }) => {
       try {
-        const result = await libraryService.browseLibrary({
-          stream: query.stream,
-          subject: query.subject,
-          grade: query.grade,
-          medium: query.medium,
-          resourceType: query.resourceType,
-          page: query.page ? Number(query.page) : 1,
-          limit: query.limit ? Number(query.limit) : 20,
-        });
+        // Pass the entire query object as filters
+        // Pagination params (page, limit) are handled inside browse() if needed, or stripped.
+        const result = await libraryService.browse(query as Record<string, string>);
 
         return successResponse(result, "Library browse results retrieved");
       } catch (error) {
@@ -54,69 +48,28 @@ export const libraryController = new Elysia()
       }
     },
     {
-      query: t.Object({
+       // validation: We verify specific params are strings if present, but allow extras?
+       // Elysia doesn't support "Any query param" easily with strict schema.
+       // Let's keep specific ones for documentation, but maybe add "additionalProperties"?
+       // Actually, for now, let's just accept the explicit ones + generic 'query' access.
+       query: t.Object({
         stream: t.Optional(t.String()),
         subject: t.Optional(t.String()),
         grade: t.Optional(t.String()),
         medium: t.Optional(t.String()),
         resourceType: t.Optional(t.String()),
-        page: t.Optional(t.String()),
-        limit: t.Optional(t.String()),
-      }),
+        lesson: t.Optional(t.String()),
+        page: t.Optional(t.Numeric()), 
+        limit: t.Optional(t.Numeric())
+      }, { additionalProperties: true }), // Allow other params
       detail: {
-        summary: "Browse Library with Filters",
-        description:
-          "Browse library resources with tag-based filters (AND logic). Returns hierarchical structure with pagination.",
+        summary: "Browse Library (Drill-Down)",
+        description: "Get 'Next Available Folders' and 'Resources' based on current tag filters.",
         tags: ["Library"],
-        parameters: [
-          {
-            name: "stream",
-            in: "query",
-            description:
-              "Filter by Stream (e.g., 'A/L Subjects', 'O/L Subjects')",
-            schema: { type: "string" },
-          },
-          {
-            name: "subject",
-            in: "query",
-            description: "Filter by Subject (e.g., 'Economics', 'Biology')",
-            schema: { type: "string" },
-          },
-          {
-            name: "grade",
-            in: "query",
-            description: "Filter by Grade (e.g., 'Grade 12', 'Grade 13')",
-            schema: { type: "string" },
-          },
-          {
-            name: "medium",
-            in: "query",
-            description:
-              "Filter by Medium (e.g., 'English Medium', 'Sinhala Medium')",
-            schema: { type: "string" },
-          },
-          {
-            name: "resourceType",
-            in: "query",
-            description: "Filter by Resource Type (e.g., 'Unit', 'Syllabus')",
-            schema: { type: "string" },
-          },
-          {
-            name: "page",
-            in: "query",
-            description: "Page number (default: 1)",
-            schema: { type: "string" },
-          },
-          {
-            name: "limit",
-            in: "query",
-            description: "Results per page (default: 20)",
-            schema: { type: "string" },
-          },
-        ],
-      },
+      }
     }
   )
+
   .get(
     "/hierarchy",
     async ({ set }) => {
