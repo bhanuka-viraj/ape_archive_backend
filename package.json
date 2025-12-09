@@ -7,8 +7,11 @@
     "dev": "bun run generate && bun run --watch src/index.ts",
     "generate": "dotenv -e .env -- prisma generate",
     "seed": "bun prisma db seed",
+    "map:drive": "dotenv -e .env -- bun src/scripts/map-drive.ts",
     "sync:drive": "dotenv -e .env -- bun src/scripts/sync-drive.ts",
     "migrate:drive": "dotenv -e .env -- bun src/scripts/migrate-drive.ts",
+    "db:reset": "bun run src/scripts/reset-db.ts",
+    "lint": "bun x eslint src/",
     "start": "bun src/index.ts"
   },
   "dependencies": {

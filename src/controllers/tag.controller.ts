@@ -15,6 +15,7 @@ export const tagController = new Elysia()
       const tags = await tagService.getTags({
         source: query.source as TagSource,
         group: query.group,
+        search: query.search, // Pass search param
       });
       return successResponse(tags, "Tags fetched successfully");
     },
@@ -22,6 +23,7 @@ export const tagController = new Elysia()
       query: t.Object({
         source: t.Optional(t.Enum(TagSource)),
         group: t.Optional(t.String()),
+        search: t.Optional(t.String()), // Validate search param
       }),
       detail: {
         tags: ["Tag"],

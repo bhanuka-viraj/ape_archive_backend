@@ -20,11 +20,18 @@ class TagService {
   async getTags(filters?: {
     source?: TagSource;
     group?: string;
+    search?: string;
   }): Promise<any[]> {
     try {
       const where: any = {};
       if (filters?.source) where.source = filters.source;
       if (filters?.group) where.group = filters.group;
+      if (filters?.search) {
+        where.name = {
+           contains: filters.search.trim(),
+           mode: 'insensitive'
+        };
+      }
 
       const tags = await prisma.tag.findMany({
         where,

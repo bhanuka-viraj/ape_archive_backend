@@ -69,15 +69,29 @@ export const handleGoogleRedirect = async (code: string) => {
 
     if (!user) {
       log.info("Creating new user from Google OAuth", { email });
+      // Check if this is the first real user (system-sync doesn't count)
+      const userCount = await prisma.user.count({
+        where: { id: { not: "system-sync" } },
+      });
+
+      const role = userCount === 0 ? Role.ADMIN : Role.GUEST;
+
       user = await prisma.user.create({
         data: {
           email,
           googleId,
           name: name || "User",
           imageUrl: picture,
-          role: Role.GUEST,
+          role,
           isOnboarded: false,
         },
+      });
+
+      log.info("Created new user from Google OAuth", {
+        userId: user.id,
+        email,
+        role: user.role,
+        isFirstUser: userCount === 0,
       });
     } else if (!user.googleId) {
       log.info("Linking Google ID to existing user", { userId: user.id });
@@ -248,5 +262,56 @@ export const onboardUser = async (
   } catch (error) {
     log.error("Onboarding failed", error as Error);
     throw new BadRequestError("Failed to onboard user");
+  }
+};
+
+/**
+ * Get all users (paginated)
+ */
+export const getUsers = async ({
+  skip,
+  take,
+}: {
+  skip: number;
+  take: number;
+}) => {
+  const users = await prisma.user.findMany({
+    skip,
+    take,
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      imageUrl: true,
+      isOnboarded: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return users;
+};
+
+/**
+ * Get total user count
+ */
+export const getUserCount = async () => {
+  return await prisma.user.count();
+};
+
+/**
+ * Update user role (ADMIN only)
+ */
+export const updateUserRole = async (userId: string, role: Role) => {
+  try {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { role },
+    });
+    log.info("User role updated", { userId, newRole: role });
+    return user;
+  } catch (error) {
+    log.error("Failed to update user role", error as Error);
+    throw new BadRequestError("Failed to update user role");
   }
 };

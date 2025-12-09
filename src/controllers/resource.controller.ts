@@ -61,96 +61,110 @@ export const resourceController = new Elysia()
       }
 
       try {
-        const { file, grade, subject, lesson, medium, title, description } =
-          body;
+        const { 
+            file, 
+            tags: legacyTags, // Keep for backward compatibility or extra tags
+            title, 
+            description,
+            stream,
+            subject,
+            grade,
+            medium,
+            resourceType,
+            lesson 
+        } = body;
 
         if (!file) {
           set.status = 400;
           return errorResponse("File is required", 400);
         }
 
-        if (!grade || !subject || !lesson || !medium) {
-          set.status = 400;
-          return errorResponse(
-            "All hierarchy fields (grade, subject, lesson, medium) are required",
-            400
-          );
-        }
-
-        log.info("Starting resource upload", {
+        log.info("Starting user resource upload", {
           userId: user.userId,
           fileName: file.name,
-          grade,
-          subject,
-          lesson,
-          medium,
+          hierarchy: { stream, subject, grade, medium, resourceType, lesson }
         });
 
-        // 1. Ensure folder hierarchy exists in Drive
-        const folderPath = [grade, subject, lesson, medium];
-        // TODO: Update this endpoint to use tags instead of categories
-        set.status = 501;
-        return errorResponse(
-          "User upload endpoint being migrated to tag-based system. Use admin upload or search existing resources.",
-          501
-        );
+        // Collect all tag promises
+        const tagPromises: Promise<any>[] = [];
 
-        /*
-        const parentFolderId = await driveService.ensureFolderHierarchy(
-          folderPath
-        );
+        // 1. Handle Explicit Hierarchy Fields
+        if (stream) tagPromises.push(tagService.getOrCreateTag(stream, "STREAM"));
+        if (subject) tagPromises.push(tagService.getOrCreateTag(subject, "SUBJECT"));
+        if (grade) tagPromises.push(tagService.getOrCreateTag(grade, "GRADE"));
+        if (medium) tagPromises.push(tagService.getOrCreateTag(medium, "MEDIUM"));
+        if (resourceType) tagPromises.push(tagService.getOrCreateTag(resourceType, "RESOURCE_TYPE"));
+        if (lesson) tagPromises.push(tagService.getOrCreateTag(lesson, "LESSON"));
 
-        // 2. Upload file to Drive (stream-based)
-        const fileData = await file.arrayBuffer();
-        const stream = require("stream").Readable.from(fileData);
+        // 2. Handle Legacy/Extra Tags (Comma Separated)
+        if (legacyTags && legacyTags.trim() !== "") {
+             const extraTags = legacyTags.split(",").map(t => t.trim()).filter(t => t.length > 0);
+             extraTags.forEach(t => tagPromises.push(tagService.getOrCreateTag(t))); // No group by default
+        }
+
+        const resolvedTags = await Promise.all(tagPromises);
+        
+        if (resolvedTags.length === 0) {
+           set.status = 400;
+           return errorResponse("At least one tag or hierarchy field is required", 400);
+        }
+
+        // Upload file to UPLOAD_FOLDER_ID
+        const { Readable } = await import("stream");
+        // @ts-ignore
+        const streamData = Readable.from(file.stream());
+
+        const uploadFolderId = process.env.UPLOAD_FOLDER_ID;
+        if (!uploadFolderId) {
+          set.status = 500;
+          return errorResponse("Upload folder not configured", 500);
+        }
 
         const driveFile = await driveService.uploadFile(
-          stream,
+          streamData,
           file.name,
-          parentFolderId,
+          uploadFolderId,
           file.type
         );
 
-        // 3. Get or create categories
-        const gradeCategory = await categoryService.getOrCreateCategory(
-          grade,
-          CategoryType.GRADE
-        );
-        const subjectCategory = await categoryService.getOrCreateCategory(
-          subject,
-          CategoryType.SUBJECT
-        );
-        const lessonCategory = await categoryService.getOrCreateCategory(
-          lesson,
-          CategoryType.LESSON
-        );
-        const mediumCategory = await categoryService.getOrCreateCategory(
-          medium,
-          CategoryType.MEDIUM
-        );
+        log.info("File uploaded to Drive", {
+          driveFileId: driveFile.id,
+          fileName: file.name,
+        });
 
-        // 4. Create Resource record in DB
+        // Create Resource in DB with USER source
+        const tagIds = resolvedTags.map((tag) => tag.id);
+
+        // Add USER tag for backend use
+        const userSourceTag = await tagService.getOrCreateTag("USER");
+        tagIds.push(userSourceTag.id);
+
         const resource = await resourceService.createResource({
           title: title || file.name,
-          description: description,
+          description: description || "",
           driveFileId: driveFile.id,
-          mimeType: file.type,
-          fileSize: BigInt(fileData.byteLength),
+          mimeType: file.type || "application/octet-stream",
+          fileSize: BigInt(file.size),
+          status: "PENDING", // Requires admin approval
+          source: "USER", // Mark as user-uploaded
           uploaderId: user.userId,
-          categories: [
-            gradeCategory.slug,
-            subjectCategory.slug,
-            lessonCategory.slug,
-            mediumCategory.slug,
-          ],
-          status: ResourceStatus.PENDING, // Requires approval
+          tagIds,
+          storageNodeId: 1, 
+        });
+
+        log.info("User resource created", {
+          resourceId: resource.id,
+          userId: user.userId,
+          tags: resolvedTags.map(t => t.name),
         });
 
         set.status = 201;
-        return successResponse(resource, "Resource uploaded successfully");
-        */
+        return successResponse(
+          resource,
+          "Resource uploaded successfully. Awaiting admin approval."
+        );
       } catch (error) {
-        log.error("Upload error", error as Error);
+        log.error("User upload error", error as Error);
         set.status = 500;
         const message =
           error instanceof AppError ? error.message : "Upload failed";
@@ -160,15 +174,22 @@ export const resourceController = new Elysia()
     {
       body: t.Object({
         file: t.File(),
-        grade: t.String(),
-        subject: t.String(),
-        lesson: t.String(),
-        medium: t.String(),
+        tags: t.Optional(t.String({ description: "Comma-separated tag names (Legacy)" })),
         title: t.Optional(t.String()),
         description: t.Optional(t.String()),
+        // New Hierarchy Fields
+        stream: t.Optional(t.String()),
+        subject: t.Optional(t.String()),
+        grade: t.Optional(t.String()),
+        medium: t.Optional(t.String()),
+        resourceType: t.Optional(t.String()),
+        lesson: t.Optional(t.String())
       }),
       detail: {
         tags: ["Resource"],
+        summary: "Upload Resource (User)",
+        description:
+          "Upload a resource with hierarchy tags. Creates new tags if not exist (e.g. new Lesson).",
       },
     }
   )
@@ -302,8 +323,9 @@ export const resourceController = new Elysia()
         });
 
         // Upload file to Drive
-        const fileData = await file.arrayBuffer();
-        const stream = require("stream").Readable.from(fileData);
+        const { Readable } = await import("stream");
+        // @ts-ignore
+        const stream = Readable.from(file.stream());
 
         const driveFile = await driveService.uploadFile(
           stream,
@@ -313,6 +335,10 @@ export const resourceController = new Elysia()
         );
 
         // Create Resource in DB marked as SYSTEM
+        // Add ADMIN tag for backend use (to distinguish from user uploads)
+        const adminSourceTag = await tagService.getOrCreateTag("ADMIN");
+        const allTagIds = [...tagIds, adminSourceTag.id];
+
         const resource = await resourceService.createResource({
           title: title || file.name,
           description: description || "Admin uploaded resource",
@@ -322,7 +348,7 @@ export const resourceController = new Elysia()
           status: "APPROVED", // Auto-approve admin uploads
           source: "SYSTEM", // Mark as system resource
           uploaderId: user.userId,
-          tagIds: tagIds, // Connect provided tags
+          tagIds: allTagIds, // Connect provided tags + ADMIN tag
           storageNodeId: 1, // Use default storage
         });
 
