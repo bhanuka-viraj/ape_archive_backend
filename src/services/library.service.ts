@@ -29,65 +29,52 @@ class LibraryService {
    * Get library resources grouped by tag hierarchy
    * Only returns SYSTEM resources (migrated + admin-uploaded)
    */
-  async getLibraryHierarchy(): Promise<HierarchyNode> {
+  async getLibraryHierarchy() {
     try {
-      const resources = await prisma.resource.findMany({
+      // Fetch all SYSTEM tags (folders)
+      const tags = await prisma.tag.findMany({
         where: {
           source: "SYSTEM",
-          status: "APPROVED",
         },
-        include: {
-          tags: {
-            select: {
-              id: true,
-              name: true,
-              group: true,
-            },
-            where: {
-              source: "SYSTEM",
-            },
-          },
+        select: {
+          id: true,
+          name: true,
+          parentId: true,
+          group: true,
+          slug: true
         },
-        orderBy: { createdAt: "asc" },
+        orderBy: { name: "asc" },
       });
 
-      // Build hierarchy tree
-      const hierarchy: HierarchyNode = {};
+      // Build Tree Map
+      const tagMap = new Map<string, any>();
+      const roots: any[] = [];
 
-      for (const resource of resources) {
-        // Get tags organized by group
-        const tagsByGroup = this.organizeTagsByGroup(resource.tags);
-
-        // Build the path through the hierarchy
-        const path = this.buildHierarchyPath(tagsByGroup);
-
-        // Navigate/create the nested structure
-        let current: any = hierarchy;
-        for (const segment of path) {
-          if (!current[segment]) {
-            current[segment] = {};
-          }
-          current = current[segment];
-        }
-
-        // Add resource to the final level
-        if (!current.__resources) {
-          current.__resources = [];
-        }
-        current.__resources.push({
-          id: resource.id,
-          title: resource.title,
-          description: resource.description,
-          driveFileId: resource.driveFileId,
-          mimeType: resource.mimeType,
-          views: resource.views,
-          downloads: resource.downloads,
-          tags: resource.tags,
+      // Initialize nodes
+      tags.forEach(tag => {
+        tagMap.set(tag.id, {
+          id: tag.id,
+          name: tag.name,
+          slug: tag.slug,
+          group: tag.group, // Helpful for UI icons/logic
+          children: []
         });
-      }
+      });
 
-      // Clean up the structure by moving __resources arrays
-      return convertBigIntsToStrings(this.cleanHierarchy(hierarchy));
+      // Link parents
+      tags.forEach(tag => {
+        const node = tagMap.get(tag.id);
+        if (tag.parentId && tagMap.has(tag.parentId)) {
+          const parent = tagMap.get(tag.parentId);
+          parent.children.push(node);
+        } else {
+          // If no parent (or parent not found/system), it's a root
+          // Specifically for our Level structure, Levels have no parent.
+          roots.push(node);
+        }
+      });
+
+      return roots;
     } catch (error) {
       log.error("Failed to get library hierarchy", error as Error);
       throw new AppError("Failed to fetch library", 500);
