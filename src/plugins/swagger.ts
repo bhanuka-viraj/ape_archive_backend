@@ -1,11 +1,15 @@
 import { swagger } from "@elysiajs/swagger";
 
 export const swaggerPlugin = swagger({
+  provider: "scalar",
+  scalarConfig: {
+    theme: "none",
+  },
   documentation: {
     info: {
-      title: "ElysiaJS API",
+      title: "APE Archive API",
       version: "1.0.0",
-      description: "API Documentation for ElysiaJS Sample Project",
+      description: "API Documentation for APE Archive",
     },
     components: {
       securitySchemes: {
@@ -15,12 +19,6 @@ export const swaggerPlugin = swagger({
           bearerFormat: "JWT",
           description:
             "Enter your JWT token (access token from Google OAuth callback)",
-    provider: 'scalar',
-    documentation: {
-        info: {
-            title: "ElysiaJS API",
-            version: "1.0.0",
-            description: "API Documentation for ElysiaJS Sample Project",
         },
       },
     },
@@ -30,7 +28,4 @@ export const swaggerPlugin = swagger({
       },
     ],
   },
-    scalarConfig: {
-        theme: 'mars',
-    }
 });

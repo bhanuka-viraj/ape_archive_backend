@@ -19,13 +19,14 @@ export const app = new Elysia()
   .use(securityMiddleware)
   .use(swaggerPlugin)
   .onError(({ code, error, set }) => {
-    // Parse database errors first
-    const parsedError = parseDatabaseError(error);
-
+    // Handle Elysia's route not found first (before parsing as DB error)
     if (code === "NOT_FOUND") {
       set.status = 404;
       return errorResponse("Route not found", 404);
     }
+
+    // Parse database errors
+    const parsedError = parseDatabaseError(error);
 
     if (parsedError instanceof ValidationError) {
       set.status = parsedError.statusCode;
