@@ -61,48 +61,58 @@ export const resourceController = new Elysia()
       }
 
       try {
-        const { file, tags, title, description } = body;
+        const { 
+            file, 
+            tags: legacyTags, // Keep for backward compatibility or extra tags
+            title, 
+            description,
+            stream,
+            subject,
+            grade,
+            medium,
+            resourceType,
+            lesson 
+        } = body;
 
         if (!file) {
           set.status = 400;
           return errorResponse("File is required", 400);
         }
 
-        if (!tags || tags.trim() === "") {
-          set.status = 400;
-          return errorResponse(
-            "At least one tag is required (comma-separated)",
-            400
-          );
-        }
-
         log.info("Starting user resource upload", {
           userId: user.userId,
           fileName: file.name,
-          tagsInput: tags,
+          hierarchy: { stream, subject, grade, medium, resourceType, lesson }
         });
 
-        // Parse comma-separated tags
-        const tagNames = tags
-          .split(",")
-          .map((t: string) => t.trim())
-          .filter((t: string) => t.length > 0);
+        // Collect all tag promises
+        const tagPromises: Promise<any>[] = [];
 
-        if (tagNames.length === 0) {
-          set.status = 400;
-          return errorResponse("At least one valid tag is required", 400);
+        // 1. Handle Explicit Hierarchy Fields
+        if (stream) tagPromises.push(tagService.getOrCreateTag(stream, "STREAM"));
+        if (subject) tagPromises.push(tagService.getOrCreateTag(subject, "SUBJECT"));
+        if (grade) tagPromises.push(tagService.getOrCreateTag(grade, "GRADE"));
+        if (medium) tagPromises.push(tagService.getOrCreateTag(medium, "MEDIUM"));
+        if (resourceType) tagPromises.push(tagService.getOrCreateTag(resourceType, "RESOURCE_TYPE"));
+        if (lesson) tagPromises.push(tagService.getOrCreateTag(lesson, "LESSON"));
+
+        // 2. Handle Legacy/Extra Tags (Comma Separated)
+        if (legacyTags && legacyTags.trim() !== "") {
+             const extraTags = legacyTags.split(",").map(t => t.trim()).filter(t => t.length > 0);
+             extraTags.forEach(t => tagPromises.push(tagService.getOrCreateTag(t))); // No group by default
         }
 
-        // Get or create tags (will use existing if found, create if not)
-        const tagObjects = await Promise.all(
-          tagNames.map((tagName: string) => tagService.getOrCreateTag(tagName))
-        );
+        const resolvedTags = await Promise.all(tagPromises);
+        
+        if (resolvedTags.length === 0) {
+           set.status = 400;
+           return errorResponse("At least one tag or hierarchy field is required", 400);
+        }
 
         // Upload file to UPLOAD_FOLDER_ID
         const { Readable } = await import("stream");
-        // Convert Web Stream to Node Stream for Google Drive API
-        // @ts-ignore - Bun/Elysia file.stream() returns a Web ReadableStream which Node Readable.from handles
-        const stream = Readable.from(file.stream());
+        // @ts-ignore
+        const streamData = Readable.from(file.stream());
 
         const uploadFolderId = process.env.UPLOAD_FOLDER_ID;
         if (!uploadFolderId) {
@@ -111,7 +121,7 @@ export const resourceController = new Elysia()
         }
 
         const driveFile = await driveService.uploadFile(
-          stream,
+          streamData,
           file.name,
           uploadFolderId,
           file.type
@@ -123,9 +133,9 @@ export const resourceController = new Elysia()
         });
 
         // Create Resource in DB with USER source
-        const tagIds = tagObjects.map((tag) => tag.id);
+        const tagIds = resolvedTags.map((tag) => tag.id);
 
-        // Add USER tag for backend use (to distinguish from admin uploads)
+        // Add USER tag for backend use
         const userSourceTag = await tagService.getOrCreateTag("USER");
         tagIds.push(userSourceTag.id);
 
@@ -139,13 +149,13 @@ export const resourceController = new Elysia()
           source: "USER", // Mark as user-uploaded
           uploaderId: user.userId,
           tagIds,
-          storageNodeId: 1, // Use default storage
+          storageNodeId: 1, 
         });
 
         log.info("User resource created", {
           resourceId: resource.id,
           userId: user.userId,
-          tags: tagNames,
+          tags: resolvedTags.map(t => t.name),
         });
 
         set.status = 201;
@@ -164,15 +174,22 @@ export const resourceController = new Elysia()
     {
       body: t.Object({
         file: t.File(),
-        tags: t.String({ description: "Comma-separated tag names" }),
+        tags: t.Optional(t.String({ description: "Comma-separated tag names (Legacy)" })),
         title: t.Optional(t.String()),
         description: t.Optional(t.String()),
+        // New Hierarchy Fields
+        stream: t.Optional(t.String()),
+        subject: t.Optional(t.String()),
+        grade: t.Optional(t.String()),
+        medium: t.Optional(t.String()),
+        resourceType: t.Optional(t.String()),
+        lesson: t.Optional(t.String())
       }),
       detail: {
         tags: ["Resource"],
         summary: "Upload Resource (User)",
         description:
-          "Upload a resource with tags. Comma-separated tag names (creates new tags if not exist). Resource awaits admin approval.",
+          "Upload a resource with hierarchy tags. Creates new tags if not exist (e.g. new Lesson).",
       },
     }
   )
