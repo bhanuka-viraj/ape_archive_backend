@@ -53,6 +53,7 @@ export const libraryController = new Elysia()
        // Let's keep specific ones for documentation, but maybe add "additionalProperties"?
        // Actually, for now, let's just accept the explicit ones + generic 'query' access.
        query: t.Object({
+        level: t.Optional(t.String()),
         stream: t.Optional(t.String()),
         subject: t.Optional(t.String()),
         grade: t.Optional(t.String()),

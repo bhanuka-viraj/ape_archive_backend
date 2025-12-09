@@ -168,6 +168,11 @@ model Tag {
   group          String?     // e.g. "Grade", "Subject", "Lesson", "Medium", "ResourceType"
   source         TagSource   @default(USER) // SYSTEM for migrated, USER for custom tags
   
+  // Hierarchy
+  parentId       String?
+  parent         Tag?        @relation("TagHierarchy", fields: [parentId], references: [id])
+  children       Tag[]       @relation("TagHierarchy")
+
   createdAt      DateTime    @default(now())
   
   // Relations

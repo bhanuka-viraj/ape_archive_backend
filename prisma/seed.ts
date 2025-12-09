@@ -84,7 +84,7 @@ async function main() {
     update: {},
     create: {
       id: "system-sync",
-      email: "system-sync@resilientlearn.com",
+      email: "system-sync@apeArchive.com",
       name: "System Bot",
       role: "ADMIN",
       isOnboarded: true,

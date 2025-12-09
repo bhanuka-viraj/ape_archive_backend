@@ -9,12 +9,15 @@ const prisma = new PrismaClient();
 
 // Context to track where we are in the hierarchy
 interface SyncContext {
+  levelId?: string;
   streamId?: string;
   subjectId?: string;
   gradeId?: string;
   mediumId?: string;
   // Accumulates all valid tag IDs encountered in the path
   tagIds: string[];
+  // Tracks the immediate parent tag for the current folder
+  currentParentTagId?: string;
 }
 
 interface DriveSyncStats {
@@ -80,7 +83,7 @@ class DriveSync {
   /**
    * Idempotently ensure a Tag exists in the DB
    */
-  private async ensureTag(name: string, group: string): Promise<string> {
+  private async ensureTag(name: string, group: string, parentId?: string): Promise<string> {
     try {
       // Create a URL-friendly slug
       const slug = name
@@ -91,12 +94,15 @@ class DriveSync {
 
       const tag = await prisma.tag.upsert({
         where: { slug },
-        update: {}, // If exists, do nothing (idempotent)
+        update: {
+          parentId: parentId || undefined // Update parent if provided
+        }, 
         create: {
           name: name.trim(),
           slug,
           group,
           source: "SYSTEM", // Mark as system-generated
+          parentId,
         },
       });
 
@@ -122,24 +128,30 @@ class DriveSync {
   /**
    * Heuristics to identify folder type based on name
    */
+  private isLevelName(name: string): boolean {
+    // "A/L Subjects", "O/L Subjects", "Primary Class Subjects"
+    return /Subjects$/i.test(name);
+  }
+
   private isStreamName(name: string): boolean {
     // Anchored Strict Stream Check
-    // Includes "Science Stream" AND "O/L Subjects", "Primary Class Subjects" (acting as Streams)
-    if (/^A\/L Subjects$/i.test(name)) return false; // Special Case: A/L Subjects is a CONTAINER, not a Stream
+    // Includes "Science Stream"
+    // "Subjects" folders are now LEVELS, so we skip them here.
+    if (/Subjects\s*$/i.test(name)) return false; 
     
-    return /^(science|commerce|arts|tech)(?:\s+stream)?$/i.test(name) || 
-           /stream$/i.test(name) ||
-           /subjects$/i.test(name); // "O/L Subjects", "6-9 Class Subjects"
+    // Require strict "Stream" suffix to avoid confusing Subjects (e.g. "Science", "Art") with Streams
+    return /^(science|commerce|arts|tech)\s+stream\s*$/i.test(name) || 
+           /stream\s*$/i.test(name);
   }
 
   private isGradeName(name: string): boolean {
     // Anchored Grade Check
-    return /^(grade\s+\d+|grade\s+1[0-3]|o\/l|a\/l|ordinary\s+level|advanced\s+level)/i.test(name);
+    return /^(grade\s+\d+|grade\s+1[0-3]|o\/l|a\/l|ordinary\s+level|advanced\s+level)\s*$/i.test(name);
   }
 
   private isMediumName(name: string): boolean {
     // Anchored Medium Check - MUST start with language
-    return /^(english|sinhala|tamil|urdu|french|japanese)(?:\s+medium)?$/i.test(name);
+    return /^(english|sinhala|tamil|urdu|french|japanese)(?:\s+medium)?\s*$/i.test(name);
   }
   
   private isLessonName(name: string): boolean {
@@ -186,7 +198,8 @@ class DriveSync {
           if (file.mimeType === this.FOLDER_MIME) {
             this.stats.foldersScanned++;
             
-            const name = file.name;
+            // TRIM NAME TO HANDLE INVISIBLE TRAILING SPACES FROM DRIVE
+            const name = file.name.trim();
             
             // --- CONTEXT AWARE TAGGING LOGIC ---
             const nextContext: SyncContext = { 
@@ -195,20 +208,20 @@ class DriveSync {
             };
 
             // --- SPECIAL CASE: CONTAINER FOLDERS ---
-            // "A/L Subjects" contains Streams (Art Stream, Science Stream)
-            // We just want to traverse into it without assigning a tag itself.
-            if (/^A\/L Subjects$/i.test(name)) {
-                 log.info(`${indent}[CONTAINER] ${name} -> Skipping Tag, Traversing...`);
-                 await this.processFolder(file.id, nextContext, depth + 1);
-                 continue;
-            }
+            // Determine hierarchy: LEVEL -> STREAM -> SUBJECT -> GRADE...
+
             let tagGroup = "SUBJECT"; // Default fallback
             let tagId: string | undefined;
+            const parentId = currentContext.currentParentTagId; 
 
-            // Determine what this folder represents based on what we are missing
-            if (!nextContext.streamId && this.isStreamName(name)) {
+            if (!nextContext.levelId && this.isLevelName(name)) {
+                tagGroup = "LEVEL";
+                tagId = await this.ensureTag(name, tagGroup, parentId);
+                nextContext.levelId = tagId;
+            }
+            else if (!nextContext.streamId && this.isStreamName(name)) {
               tagGroup = "STREAM";
-              tagId = await this.ensureTag(name, tagGroup);
+              tagId = await this.ensureTag(name, tagGroup, parentId);
               nextContext.streamId = tagId;
             } 
             else if (!nextContext.subjectId) {
@@ -217,13 +230,13 @@ class DriveSync {
               tagGroup = "SUBJECT";
               // Exception: If it looks like a Grade, maybe we skipped Subject? 
               // But usually structure is strict. Let's assume it is Subject.
-              tagId = await this.ensureTag(name, tagGroup);
+              tagId = await this.ensureTag(name, tagGroup, parentId);
               nextContext.subjectId = tagId;
             }
             else if (!nextContext.gradeId) {
               if (this.isGradeName(name)) {
                 tagGroup = "GRADE";
-                tagId = await this.ensureTag(name, tagGroup);
+                tagId = await this.ensureTag(name, tagGroup, parentId);
                 nextContext.gradeId = tagId;
               } else {
                  // Warning: Folder found where Grade expected, but doesn't look like Grade
@@ -233,7 +246,7 @@ class DriveSync {
             else if (!nextContext.mediumId) {
               if (this.isMediumName(name)) {
                 tagGroup = "MEDIUM";
-                tagId = await this.ensureTag(name, tagGroup);
+                tagId = await this.ensureTag(name, tagGroup, parentId);
                 nextContext.mediumId = tagId;
               } else {
                  log.warn(`${indent}[WARN] Expected Medium, found: ${name}`);
@@ -242,25 +255,24 @@ class DriveSync {
             else {
               // We are deep (Level 5+). Content organization.
               if (this.isLessonName(name)) {
-                tagGroup = "LESSON";
+                 tagGroup = "LESSON";
+                 tagId = await this.ensureTag(name, tagGroup, parentId);
               } else {
-                tagGroup = "RESOURCE_TYPE";
+                 tagGroup = "RESOURCE_TYPE"; // Fallback for Syllabus, Teacher Guide folders
+                 tagId = await this.ensureTag(name, tagGroup, parentId);
               }
-              tagId = await this.ensureTag(name, tagGroup);
-              // We track lessons/resource types in tagIds list, 
-              // but we don't need specific context fields for them anymore
             }
 
+            // If we successfully identified a tag for this folder, add it to context
             if (tagId) {
               nextContext.tagIds.push(tagId);
+              nextContext.currentParentTagId = tagId; // Set as parent for children
               log.info(`${indent}[FOLDER] ${name} -> [${tagGroup}]`);
             }
-
-            // Recurse
+            
             await this.processFolder(file.id, nextContext, depth + 1);
-
           } else {
-            // --- FILE PROCESSING (IDEMPOTENT UPSERT) ---
+            // Process File
             await this.upsertFileResource(file, currentContext.tagIds, indent);
           }
         }
@@ -269,8 +281,9 @@ class DriveSync {
         hasMore = !!pageToken;
       }
     } catch (error) {
-      log.error(`${indent}Error processing folder`, error as Error);
-      this.stats.errorsEncountered++;
+       console.error(`❌ FATAL ERROR processing folder ${folderId}:`, error);
+       log.error(`${indent}Error processing folder`, error as Error);
+       this.stats.errorsEncountered++;
     }
   }
 
@@ -350,7 +363,7 @@ class DriveSync {
         update: {},
         create: {
           id: "system-sync",
-          email: "system-sync@resilientlearn.com",
+          email: "system-sync@apeArchive.com",
           name: "System Bot",
           role: "ADMIN",
           isOnboarded: true,
@@ -379,7 +392,7 @@ class DriveSync {
 
     console.log("\n");
     console.log("╔════════════════════════════════════════╗");
-    console.log("║      Smart Sync Complete               ║");
+    console.log("║            Sync Complete               ║");
     console.log("╚════════════════════════════════════════╝");
     console.log(`\n📊 Statistics:`);
     console.log(`  ├─ Folders Scanned: ${this.stats.foldersScanned}`);

@@ -66,6 +66,7 @@ export const resourceController = new Elysia()
             tags: legacyTags, // Keep for backward compatibility or extra tags
             title, 
             description,
+            level,
             stream,
             subject,
             grade,
@@ -82,13 +83,14 @@ export const resourceController = new Elysia()
         log.info("Starting user resource upload", {
           userId: user.userId,
           fileName: file.name,
-          hierarchy: { stream, subject, grade, medium, resourceType, lesson }
+          hierarchy: { level, stream, subject, grade, medium, resourceType, lesson }
         });
 
         // Collect all tag promises
         const tagPromises: Promise<any>[] = [];
 
         // 1. Handle Explicit Hierarchy Fields
+        if (level) tagPromises.push(tagService.getOrCreateTag(level, "LEVEL"));
         if (stream) tagPromises.push(tagService.getOrCreateTag(stream, "STREAM"));
         if (subject) tagPromises.push(tagService.getOrCreateTag(subject, "SUBJECT"));
         if (grade) tagPromises.push(tagService.getOrCreateTag(grade, "GRADE"));
@@ -145,7 +147,7 @@ export const resourceController = new Elysia()
           driveFileId: driveFile.id,
           mimeType: file.type || "application/octet-stream",
           fileSize: BigInt(file.size),
-          status: "PENDING", // Requires admin approval
+          status: "APPROVED", // Auto-approved for now
           source: "USER", // Mark as user-uploaded
           uploaderId: user.userId,
           tagIds,
@@ -161,7 +163,7 @@ export const resourceController = new Elysia()
         set.status = 201;
         return successResponse(
           resource,
-          "Resource uploaded successfully. Awaiting admin approval."
+          "Resource uploaded successfully."
         );
       } catch (error) {
         log.error("User upload error", error as Error);
@@ -178,6 +180,7 @@ export const resourceController = new Elysia()
         title: t.Optional(t.String()),
         description: t.Optional(t.String()),
         // New Hierarchy Fields
+        level: t.Optional(t.String()),
         stream: t.Optional(t.String()),
         subject: t.Optional(t.String()),
         grade: t.Optional(t.String()),
