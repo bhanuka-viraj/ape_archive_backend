@@ -210,9 +210,12 @@ class LibraryService {
             const tagName = filters[filterKey];
             const tag = await prisma.tag.findFirst({
                 where: { 
-                    name: tagName,
                     group: group,
-                    source: "SYSTEM"
+                    source: "SYSTEM",
+                    OR: [
+                      { name: { equals: tagName, mode: 'insensitive' } },
+                      { slug: { equals: tagName, mode: 'insensitive' } }
+                    ]
                 }
             });
             
@@ -237,9 +240,20 @@ class LibraryService {
     // Usually only show files if we are inside a folder.
     let resources: any[] = [];
     if (currentParentId) {
+        // Optimization: Don't show files that belong to subfolders (children tags)
+        // This keeps the view clean (Drill-down style)
+        const childTagIds = childTags.map(t => t.id);
+        
         resources = await prisma.resource.findMany({
             where: {
                 tags: { some: { id: currentParentId } },
+                // Exclude resources that are also tagged with any of the child tags
+                // This implies they are "inside" a subfolder
+                AND: childTagIds.length > 0 ? {
+                  NOT: {
+                    tags: { some: { id: { in: childTagIds } } }
+                  }
+                } : {},
                 source: "SYSTEM",
                 status: "APPROVED"
             },

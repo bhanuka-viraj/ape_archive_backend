@@ -17,7 +17,8 @@ interface SyncContext {
   // Accumulates all valid tag IDs encountered in the path
   tagIds: string[];
   // Tracks the immediate parent tag for the current folder
-  currentParentTagId?: string;
+  currentParentTagId?: string | null;
+  currentParentSlug?: string | null; // Track parent slug for uniqueness
 }
 
 interface DriveSyncStats {
@@ -83,39 +84,72 @@ class DriveSync {
   /**
    * Idempotently ensure a Tag exists in the DB
    */
-  private async ensureTag(name: string, group: string, parentId?: string): Promise<string> {
-    try {
-      // Create a URL-friendly slug
-      const slug = name
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, "-")
-        .replace(/[^\w-]/g, "");
+  private async ensureTag(name: string, group?: string, parentId?: string | null, parentSlug?: string | null): Promise<string> {
+    const cleanName = name.trim();
+    
+    // Generate Context-Aware Slug
+    let baseSlug = cleanName
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^\w-]/g, "");
 
-      const tag = await prisma.tag.upsert({
-        where: { slug },
-        update: {
-          parentId: parentId || undefined // Update parent if provided
-        }, 
-        create: {
-          name: name.trim(),
-          slug,
-          group,
-          source: "SYSTEM", // Mark as system-generated
-          parentId,
+    // If we have a parent context, prefix it to ensure uniqueness
+    // E.g. "history" -> "art-stream-history" vs "6-9-class-subjects-history"
+    let finalSlug = baseSlug;
+    if (parentSlug) {
+        // Avoid double prefixing if the name itself is compound (unlikely but safe)
+        if (!baseSlug.startsWith(parentSlug)) {
+            finalSlug = `${parentSlug}-${baseSlug}`;
+        }
+    }
+
+    // Try to find by Slug first (Precision Match)
+    let tag = await prisma.tag.findFirst({
+      where: { slug: finalSlug },
+    });
+    
+    // Fallback: Check by Name AND ParentId (Collision Handling)
+    if (!tag) {
+        tag = await prisma.tag.findFirst({
+            where: { 
+                name: cleanName,
+                parentId: parentId || null
+            }
+        });
+    }
+
+    if (!tag) {
+      tag = await prisma.tag.create({
+        data: {
+          name: cleanName,
+          slug: finalSlug,
+          group: group || null,
+          source: "SYSTEM",
+          parentId: parentId || null
         },
       });
-
-      // Only count as "created" if it was barely created? 
-      // Upsert doesn't tell us, but that's fine for stats.
-      // We could check createdAt, but let's keep it simple.
-      
-      return tag.id;
-    } catch (error) {
-      log.error("Error ensuring tag", { name, group, error });
-      this.stats.errorsEncountered++;
-      throw error;
+      // console.log(`Created tag: ${cleanName} (${group}) [${finalSlug}]`);
+    } else {
+      // Upsert/Update logic remains same
+      if (tag.group !== group || tag.parentId !== parentId || tag.slug !== finalSlug) {
+         await prisma.tag.update({
+             where: { id: tag.id },
+             data: { 
+                 group: group || tag.group,
+                 parentId: parentId, // Ensure hierarchy is enforced
+                 slug: finalSlug     // Enforce unique slug
+             }
+         });
+      }
     }
+    return tag.id;
+  }
+  
+  // Helper to get slug for context tracking
+  async getTagSlug(tagId: string): Promise<string | null> {
+      const tag = await prisma.tag.findUnique({ where: { id: tagId }, select: { slug: true } });
+      return tag?.slug || null;
   }
 
   /**
@@ -213,30 +247,35 @@ class DriveSync {
             let tagGroup = "SUBJECT"; // Default fallback
             let tagId: string | undefined;
             const parentId = currentContext.currentParentTagId; 
+            const parentSlug = currentContext.currentParentSlug;
 
             if (!nextContext.levelId && this.isLevelName(name)) {
                 tagGroup = "LEVEL";
-                tagId = await this.ensureTag(name, tagGroup, parentId);
+                // Levels are root, so no parentSlug prefix usually, but ok.
+                tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
                 nextContext.levelId = tagId;
-            }
-            else if (!nextContext.streamId && this.isStreamName(name)) {
-              tagGroup = "STREAM";
-              tagId = await this.ensureTag(name, tagGroup, parentId);
-              nextContext.streamId = tagId;
-            } 
-            else if (!nextContext.subjectId) {
-              // If we don't have a Subject yet, and this ISN'T a Stream, it must be valid Subject
-              // (e.g. "General English" or "Accounting" inside Commerce Stream)
-              tagGroup = "SUBJECT";
-              // Exception: If it looks like a Grade, maybe we skipped Subject? 
-              // But usually structure is strict. Let's assume it is Subject.
-              tagId = await this.ensureTag(name, tagGroup, parentId);
-              nextContext.subjectId = tagId;
+            } else if (!nextContext.streamId && this.isStreamName(name)) {
+                tagGroup = "STREAM";
+                tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
+                nextContext.streamId = tagId;
+            } else if (nextContext.streamId || nextContext.levelId) {
+                // If we are inside a Stream or Level, treat as Subject
+                 if (this.isGradeName(name)) {
+                     tagGroup = "GRADE";
+                 } else if (this.isMediumName(name)) {
+                     tagGroup = "MEDIUM";
+                 } else if (this.isLessonName(name)) {
+                     tagGroup = "LESSON";
+                 } else {
+                    // It's a Subject or Resource Type
+                    tagGroup = nextContext.gradeId ? "RESOURCE_TYPE" : "SUBJECT";
+                 }
+                 tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
             }
             else if (!nextContext.gradeId) {
               if (this.isGradeName(name)) {
                 tagGroup = "GRADE";
-                tagId = await this.ensureTag(name, tagGroup, parentId);
+                tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
                 nextContext.gradeId = tagId;
               } else {
                  // Warning: Folder found where Grade expected, but doesn't look like Grade
@@ -246,7 +285,7 @@ class DriveSync {
             else if (!nextContext.mediumId) {
               if (this.isMediumName(name)) {
                 tagGroup = "MEDIUM";
-                tagId = await this.ensureTag(name, tagGroup, parentId);
+                tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
                 nextContext.mediumId = tagId;
               } else {
                  log.warn(`${indent}[WARN] Expected Medium, found: ${name}`);
@@ -256,21 +295,31 @@ class DriveSync {
               // We are deep (Level 5+). Content organization.
               if (this.isLessonName(name)) {
                  tagGroup = "LESSON";
-                 tagId = await this.ensureTag(name, tagGroup, parentId);
+                 tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
               } else {
                  tagGroup = "RESOURCE_TYPE"; // Fallback for Syllabus, Teacher Guide folders
-                 tagId = await this.ensureTag(name, tagGroup, parentId);
+                 tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
               }
             }
 
-            // If we successfully identified a tag for this folder, add it to context
+            // If we successfully identified a tag for this folder, add it            
             if (tagId) {
-              nextContext.tagIds.push(tagId);
-              nextContext.currentParentTagId = tagId; // Set as parent for children
-              log.info(`${indent}[FOLDER] ${name} -> [${tagGroup}]`);
+                // Get the actual slug created to pass down
+                const createdSlug = await this.getTagSlug(tagId);
+                
+                nextContext.tagIds.push(tagId);
+                nextContext.currentParentTagId = tagId;
+                nextContext.currentParentSlug = createdSlug; // Pass down context
+                
+                log.info(`${indent}[FOLDER] ${name} -> [${tagGroup}]`);
+                await this.processFolder(file.id, nextContext, depth + 1);
+            } else {
+                // If no specific tag was identified for this folder,
+                // just pass the current context down without adding a new tag
+                // This means the folder itself isn't a "tag" but its contents inherit parent tags.
+                log.debug(`${indent}[FOLDER] ${name} -> No specific tag, inheriting context.`);
+                await this.processFolder(file.id, nextContext, depth + 1);
             }
-            
-            await this.processFolder(file.id, nextContext, depth + 1);
           } else {
             // Process File
             await this.upsertFileResource(file, currentContext.tagIds, indent);

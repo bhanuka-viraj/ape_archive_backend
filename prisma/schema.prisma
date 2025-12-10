@@ -163,8 +163,8 @@ model StorageNode {
 
 model Tag {
   id             String      @id @default(uuid())
-  name           String      @unique
-  slug           String      @unique
+  name           String
+  slug           String      
   group          String?     // e.g. "Grade", "Subject", "Lesson", "Medium", "ResourceType"
   source         TagSource   @default(USER) // SYSTEM for migrated, USER for custom tags
   
