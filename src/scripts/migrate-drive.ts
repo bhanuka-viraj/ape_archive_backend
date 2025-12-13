@@ -1,456 +1,490 @@
+
+import fs from "fs";
 import { google, drive_v3 } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 import { PrismaClient } from "@prisma/client";
-import { env } from "../config/env"; // Ensure this path matches your project
-import { log } from "../utils/logger"; // Ensure this path matches your project
+import { env } from "../config/env";
+import { log } from "../utils/logger";
+import { TagPatterns } from "../utils/tag-patterns";
 
 const prisma = new PrismaClient();
 
-interface MigrationStats {
-  foldersScanned: number;
-  filesProcessed: number;
+// Configuration
+const ROOT_FOLDER_ID = process.env.ROOT_FOLDER_ID; // The Drive Folder ID to migrate
+const UPLOAD_FOLDER_ID = process.env.UPLOAD_FOLDER_ID; // Destination in Drive (archive)
+const SCOPES = ["https://www.googleapis.com/auth/drive"];
+
+if (!ROOT_FOLDER_ID || !UPLOAD_FOLDER_ID) {
+  log.error("Missing ROOT_FOLDER_ID or UPLOAD_FOLDER_ID in .env");
+  process.exit(1);
+}
+
+// --- Auth Setup ---
+const auth = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  "http://localhost:3000/oauth2callback"
+);
+auth.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+const drive = google.drive({ version: "v3", auth });
+
+// --- Type Definitions ---
+interface Stats {
   filesMigrated: number;
   filesSkipped: number;
-  tagsCreated: number;
-  errorsEncountered: number;
-  startTime: Date;
-  endTime?: Date;
+  foldersScanned: number;
+  errors: number;
+  startTime: number;
 }
 
-class DriveMigration {
-  private oauth2Client: OAuth2Client;
-  private drive: drive_v3.Drive;
-  private stats: MigrationStats;
-  private readonly API_DELAY_MS = 150; // Slightly increased delay for safety
-  private storageNodeId: number = 1; // Default storage node
+interface HierarchyContext {
+    levelName?: string;
+    gradeName?: string;
+    streamName?: string;
+    
+    isFlexibleRoot: boolean;
+    flexibleTags: string[]; 
+    parentTagId: string | null; 
+    subject?: { id: string, name: string };
+    lessonName?: string; // NEW: Lesson/Unit Support
+    inheritedTags?: string[];
+}
 
-  constructor() {
-    this.oauth2Client = new OAuth2Client(
-      env.GOOGLE_CLIENT_ID,
-      env.GOOGLE_CLIENT_SECRET
-    );
+class DriveMigrator {
+  private stats: Stats = {
+    filesMigrated: 0,
+    filesSkipped: 0,
+    foldersScanned: 0,
+    errors: 0,
+    startTime: Date.now(),
+  };
 
-    // Will be set from storage node in migrate() method
-    this.drive = google.drive({
-      version: "v3",
-      auth: this.oauth2Client,
-    });
+  private uniqueFileLog = new Set<string>(); // prevent processing same file twice in one run
+  private folderPathCache = new Map<string, string>(); // Helper for ensuring folders
 
-    this.stats = {
-      foldersScanned: 0,
-      filesProcessed: 0,
-      filesMigrated: 0,
-      filesSkipped: 0,
-      tagsCreated: 0,
-      errorsEncountered: 0,
-      startTime: new Date(),
-    };
-  }
+  async run() {
+    log.info("🚀 Starting Smart Drive Migration (Grade-First Logic)...");
+    log.info(`   (Duplicate Check Enabled via originalDriveId)`);
 
-  // --- HELPER: Auth ---
-  private async ensureTokenValid(): Promise<void> {
+    const hasToken = !!process.env.GOOGLE_REFRESH_TOKEN;
+    const tokenPreview = hasToken ? process.env.GOOGLE_REFRESH_TOKEN!.substring(0, 5) + "..." : "NONE";
+    log.info(`   > Checking Token: ${hasToken ? 'PRESENT' : 'MISSING'} (${tokenPreview})`);
+
+    // Seed System User
+    log.info("   > Seeding System User... (Prisma Upsert)");
     try {
-      const credentials = this.oauth2Client.credentials;
-      if (!credentials.expiry_date || credentials.expiry_date < Date.now()) {
-        log.debug("Refreshing OAuth2 token for migration");
-        const response = await this.oauth2Client.refreshAccessToken();
-        this.oauth2Client.setCredentials(response.credentials);
-      }
-    } catch (error) {
-      log.error("Failed to refresh token", error as Error);
-      throw error;
-    }
-  }
-
-  // --- HELPER: Rate Limit ---
-  private async delay(): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, this.API_DELAY_MS));
-  }
-
-  // --- CORE LOGIC: Tag Group Detection ---
-  private detectTagGroup(folderName: string): string {
-    const name = folderName.toLowerCase().trim();
-
-    // 1. STREAM (Commerce Stream, Science Stream)
-    // Matches: "Commerce Stream", "Art Stream"
-    if (
-      /(stream|science|commerce|arts|tech)/i.test(name) &&
-      /stream/i.test(name)
-    ) {
-      return "Stream";
-    }
-
-    // 2. RESOURCE TYPE (Syllabus, Guides, Notes)
-    // Matches: "Teacher's Guide", "Teachers Guide", "Teracher's Guide", "Syllabus", "Past Papers"
-    // Note: The '.*' allows for typos or 's
-    if (
-      /^(syllabus|teacher.*guide|past\s*papers?|model\s*papers?|notes?|short\s*notes?|tute|ගුරු\s*මාර්ගෝපදේශ|පාඩම්\s*මාලාව)$/i.test(
-        name
-      )
-    ) {
-      return "ResourceType";
-    }
-
-    // 3. GRADE (Grade 12, Grade 13)
-    if (/^grade\s*\d+/i.test(name)) {
-      return "Grade";
-    }
-
-    // 4. MEDIUM (English Medium, Sinhala Medium)
-    // STRICT CHECK: Must contain the word "Medium" to avoid confusing "English" subject
-    if (/medium/i.test(name)) {
-      return "Medium";
-    }
-
-    // 5. LESSON / UNIT (Unit 01, 01 - Title, 10.Title)
-    // Matches: "Unit 1", "Lesson 5", "05 - ...", "10. ..."
-    if (
-      /^(unit|lesson|chapter|module|section|part)(\s+\d+)?|^\d+[\.\-\—\s].*$/i.test(
-        name
-      )
-    ) {
-      return "Lesson";
-    }
-
-    // 6. DEFAULT: Everything else is a SUBJECT
-    // Matches: "English", "Accounting", "Biology", "O/L Subjects"
-    return "Subject";
-  }
-
-  // --- CORE LOGIC: Tag Management ---
-  private async ensureTag(
-    name: string,
-    group?: string
-  ): Promise<{ id: string; created: boolean }> {
-    try {
-      // Clean up name (e.g. "English Medium" -> "English Medium")
-      // We do NOT slugify the name field anymore, we keep it human readable
-      const cleanName = name.trim();
-
-      // Generate slug for unique constraint
-      const slug = cleanName
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, "-")
-        .replace(/[^\w-]/g, "");
-
-      // Check existence by NAME (ignoring group for now to avoid duplicates like Math-Subject and Math-Lesson)
-      // Ideally, a name should be unique.
-      const existing = await prisma.tag.findFirst({
-        where: { name: cleanName },
-      });
-
-      if (existing) {
-        return { id: existing.id, created: false };
-      }
-
-      // Create new tag marked as SYSTEM (migrated)
-      const tag = await prisma.tag.create({
-        data: {
-          name: cleanName,
-          slug: slug,
-          group: group || "User",
-          source: "SYSTEM", // Mark as system-generated tag
-        },
-      });
-
-      this.stats.tagsCreated++;
-      log.debug(`Created Tag: [${tag.group}] ${tag.name}`);
-      return { id: tag.id, created: true };
-    } catch (error) {
-      // Handle race condition where tag might be created by another async call
-      const existing = await prisma.tag.findFirst({
-        where: { name: name.trim() },
-      });
-      if (existing) return { id: existing.id, created: false };
-
-      if (error instanceof Error) {
-        log.error(`Error creating tag "${name}": ${error.message}`);
-        if (error.stack) log.debug(`Stack: ${error.stack}`);
-      } else {
-        log.error(`Error creating tag "${name}"`, error);
-      }
-      this.stats.errorsEncountered++;
-      throw error;
-    }
-  }
-
-  // --- CORE LOGIC: Drive Copy ---
-  private async copyFileToUploadFolder(
-    fileId: string,
-    fileName: string
-  ): Promise<string | null> {
-    try {
-      await this.delay();
-
-      // Validate UPLOAD_FOLDER_ID exists
-      if (!env.UPLOAD_FOLDER_ID) {
-        log.error(
-          `UPLOAD_FOLDER_ID not configured - cannot copy file ${fileId}`
-        );
-        return null;
-      }
-
-      // Copy the file to UPLOAD_FOLDER_ID using the copy method
-      // This creates an actual duplicate of the file
-      const result = await this.drive.files.copy({
-        fileId,
-        requestBody: {
-          name: fileName, // Keep original name
-          parents: [env.UPLOAD_FOLDER_ID], // Place in upload folder
-        },
-        supportsAllDrives: true,
-        fields: "id, name, parents",
-      });
-
-      const copiedFileId = result.data.id;
-      log.debug(`File copied: ${fileId} → ${copiedFileId} (${fileName})`);
-      return copiedFileId || null;
-    } catch (error) {
-      if (error instanceof Error) {
-        log.error(`Drive Copy Failed for ${fileId}: ${error.message}`);
-        if (error.stack) log.debug(`Stack: ${error.stack}`);
-      } else {
-        log.error(`Drive Copy Failed for ${fileId}`, error);
-      }
-      return null;
-    }
-  }
-
-  // --- MAIN RECURSIVE CRAWLER ---
-  private async processFolder(
-    folderId: string,
-    tagIds: string[] = [], // Accumulate tags as we go down
-    depth: number = 0
-  ): Promise<void> {
-    await this.ensureTokenValid();
-    await this.delay();
-
-    const indent = "  ".repeat(depth);
-    log.debug(`${indent}Scanning: ${folderId}`);
-
-    try {
-      let pageToken: string | undefined;
-      let hasMore = true;
-
-      while (hasMore) {
-        const response = await this.drive.files.list({
-          q: `'${folderId}' in parents and trashed=false`,
-          spaces: "drive",
-          fields: "nextPageToken, files(id, name, mimeType, size)",
-          pageSize: 100, // Process in batches
-          pageToken,
+        await prisma.user.upsert({
+            where: { id: "system-sync" },
+            update: {},
+            create: {
+                id: "system-sync",
+                email: "system-sync@apeArchive.com",
+                name: "System Bot",
+                role: "ADMIN",
+                isOnboarded: true,
+            },
         });
+        log.info("   > System User Seeded.");
+    } catch (dbErr) {
+        log.error("   > DB Error seeding user", dbErr as Error);
+        return; 
+    }
 
-        const files = response.data.files || [];
-        this.stats.filesProcessed += files.length;
+    try {
+      // Start at Root
+      // Root context is empty
+      const initialContext: HierarchyContext = { 
+          isFlexibleRoot: false, 
+          flexibleTags: [],
+          parentTagId: null 
+      };
+      
+      await this.processFolder(ROOT_FOLDER_ID!, initialContext, 0);
+    } catch (e) {
+      log.error("Migration Fatal Error", e as Error);
+    }
+
+    const duration = (Date.now() - this.stats.startTime) / 1000;
+    log.info(`Migration Complete in ${duration}s`);
+    log.info(`Files Migrated: ${this.stats.filesMigrated}`);
+    log.info(`Files Skipped: ${this.stats.filesSkipped}`);
+    log.info(`Errors: ${this.stats.errors}`);
+  }
+
+  // --- Core Recursive Function ---
+  private async processFolder(folderId: string, context: HierarchyContext, depth: number) {
+    this.stats.foldersScanned++;
+    if (depth > 12) return; // Safety break
+
+    let pageToken: string | undefined = undefined;
+
+    do {
+      try {
+        log.info(`   > [API] Listing Folder: ${folderId}`);
+        const res = await drive.files.list({
+          q: `'${folderId}' in parents and trashed = false`,
+          fields: "nextPageToken, files(id, name, mimeType)",
+          pageToken,
+          pageSize: 100, // Batch size
+        });
+        log.info(`   > [API] Success. Found ${res.data.files?.length || 0} files.`);
+
+        const files = res.data.files || [];
+        pageToken = res.data.nextPageToken || undefined;
 
         for (const file of files) {
-          await this.delay();
-          if (!file.id || !file.name) continue;
-
-          const isFolder =
-            file.mimeType === "application/vnd.google-apps.folder";
-
-          if (isFolder) {
-            this.stats.foldersScanned++;
-
-            // 1. Detect what this folder represents (Subject? Grade? Lesson?)
-            const tagGroup = this.detectTagGroup(file.name);
-
-            // 2. Create the Tag in DB
-            const { id: tagId } = await this.ensureTag(file.name, tagGroup);
-
-            log.info(`${indent}📁 [${tagGroup}] ${file.name}`);
-
-            // 3. Add to backpack and dive deeper
-            // We pass the NEW tagId along with all previous tagIds
-            await this.processFolder(file.id, [...tagIds, tagId], depth + 1);
+          if (file.mimeType === "application/vnd.google-apps.folder") {
+            // Recurse into Folder
+            const newContext = await this.deriveFolderContext(file.name!, context);
+            await this.processFolder(file.id!, newContext, depth + 1);
           } else {
-            // It is a File (PDF, MP4, etc.)
-
-            // 1. Copy file to UPLOAD_FOLDER first and get the new file ID
-            const copiedFileId = await this.copyFileToUploadFolder(
-              file.id,
-              file.name
-            );
-
-            if (!copiedFileId) {
-              log.error(`${indent}❌ Failed to Copy: ${file.name}`);
-              this.stats.errorsEncountered++;
-              continue;
-            }
-
-            // 2. Check if we already imported this file (by copied file ID in upload folder)
-            const existingResource = await prisma.resource.findFirst({
-              where: { driveFileId: copiedFileId },
-            });
-
-            if (existingResource) {
-              log.debug(
-                `${indent}⏭️  Skipped (Already migrated): ${file.name}`
-              );
-              this.stats.filesSkipped++;
-              continue;
-            }
-
-            // 3. Create Resource in DB with the COPIED file ID
-            const resource = await prisma.resource.create({
-              data: {
-                title: file.name,
-                description: "Imported via Migration Script",
-                driveFileId: copiedFileId, // Store the COPIED file ID, not the original
-                mimeType: file.mimeType || "application/octet-stream",
-                fileSize: file.size ? BigInt(file.size) : null,
-                status: "APPROVED", // Auto-approve legacy files
-                source: "SYSTEM", // Mark as system/migrated resource
-                uploaderId: "system-sync", // Ensure this user exists!
-
-                // Connect ALL collected tags
-                tags: {
-                  connect: tagIds.map((id) => ({ id })),
-                },
-
-                // Connect to Default Storage Node (ID 1)
-                storageNodeId: 1,
-              },
-            });
-
-            log.info(
-              `${indent}✅ Migrated: ${file.name} (Tags: ${tagIds.length})`
-            );
-            this.stats.filesMigrated++;
+            // Process File
+            await this.migrateFile(file, context);
           }
         }
-
-        pageToken = response.data.nextPageToken || undefined;
-        hasMore = !!pageToken;
+      } catch (err: any) {
+        log.error(`Error listing folder ${folderId}: ${err.message}`);
+        this.stats.errors++;
+        if (err.code === 403) {
+            log.warn("Rate Limit Hit. Waiting 5s...");
+            await new Promise(r => setTimeout(r, 5000)); // Simple Backoff
+        }
+        break; 
       }
-    } catch (error) {
-      if (error instanceof Error) {
-        log.error(`Error processing folder ${folderId}: ${error.message}`);
-        if (error.stack) log.debug(`Stack: ${error.stack}`);
+    } while (pageToken);
+  }
+
+  // --- Context Logic (The Brain) ---
+  private async deriveFolderContext(folderName: string, parentContext: HierarchyContext): Promise<HierarchyContext> {
+      const cleanName = folderName.trim();
+      // Clone and init arrays if missing (safe clone)
+      const newContext: HierarchyContext = { 
+          ...parentContext,
+          flexibleTags: [...(parentContext.flexibleTags || [])],
+          inheritedTags: [...(parentContext.inheritedTags || [])]
+      };
+      
+      // 1. Check Root Level Switch
+      if (!parentContext.levelName && !parentContext.isFlexibleRoot) {
+          // Explicit Mapping for Legacy Names
+          let canonicalLevel = null;
+          if (/^6\s*-\s*9\s*Class\s*Subjects/i.test(cleanName)) canonicalLevel = "Secondary";
+          else if (/^Primary\s*Class\s*Subjects/i.test(cleanName)) canonicalLevel = "Primary";
+          else if (/^A\/L\s*Subjects/i.test(cleanName)) canonicalLevel = "A/L";
+          else if (/^O\/L\s*Subjects/i.test(cleanName)) canonicalLevel = "O/L";
+          else {
+              // DB Check
+              const rootTag = await prisma.tag.findFirst({
+                 where: { name: { equals: cleanName, mode: 'insensitive' }, parentId: null, group: "LEVEL" } 
+              });
+              if (rootTag) canonicalLevel = rootTag.name;
+          }
+
+          if (canonicalLevel) {
+               newContext.levelName = canonicalLevel;
+               const isSchool = ["A/L", "O/L", "Primary", "Secondary", "Scholarship"].some(k => canonicalLevel!.includes(k));
+               newContext.isFlexibleRoot = !isSchool;
+               
+               if (newContext.isFlexibleRoot) {
+                   const tag = await this.ensureTag(canonicalLevel, "LEVEL", null);
+                   newContext.flexibleTags = [tag.id];
+                   newContext.parentTagId = tag.id;
+               } 
+               log.info(`   [CTX] Root Switch: ${cleanName} -> ${canonicalLevel} (School: ${isSchool})`);
+               return newContext;
+          }
+      }
+
+      // 2. Flexible Mode
+      if (newContext.isFlexibleRoot) {
+          if (/attribute/i.test(cleanName)) return newContext; 
+          
+          const { categorizeFolder } = await import("../utils/tag-patterns");
+          // Check if Attribute Folder
+          const extraTags = await this.extractFileAttributes(cleanName);
+          if (extraTags.length > 0) {
+              // It is an attribute folder (or contains attributes).
+              // We should flatten it but KEEP the tags.
+              newContext.inheritedTags!.push(...extraTags);
+              return newContext; 
+          }
+
+          const parentId = newContext.parentTagId; 
+          const tag = await this.ensureTag(cleanName, "SUBJECT", parentId);
+          newContext.flexibleTags.push(tag.id);
+          newContext.parentTagId = tag.id; 
+          return newContext;
+      }
+
+      // 3. Strict School Mode
+      // A. Is it a Grade?
+      if (/Grade \d+/i.test(cleanName)) {
+           newContext.gradeName = cleanName;
+           return newContext;
+      }
+
+      // B. Is it a Stream?
+      if (/Stream/i.test(cleanName) || ["Science", "Maths", "Arts", "Commerce", "Bio", "Combined Maths", "Tech"].some(k => cleanName.toLowerCase().includes(k.toLowerCase()))) {
+          newContext.streamName = cleanName;
+          return newContext;
+      }
+
+      // C. Check Fallback / Attributes
+      // We check if this folder name resolves to any Attribute Tags.
+      const extraTags = await this.extractFileAttributes(cleanName);
+      
+      if (extraTags.length > 0) {
+          // It IS an attribute folder (e.g. "English Medium" -> [TagID])
+          // We add it to context, and skip strict path building.
+          log.info(`   [CTX] Folder is Attribute: ${cleanName} -> Inheriting Tags`);
+          newContext.inheritedTags!.push(...extraTags);
+          return newContext;
+      }
+      
+      const { categorizeFolder } = await import("../utils/tag-patterns");
+      const match = categorizeFolder(cleanName);
+      if (match && !match.isHierarchy) {
+           log.info(`   [CTX] Ignoring Attribute Folder (Matched Pattern but no Tag Created?): ${cleanName}`);
+           return newContext;
+      }
+
+      // D. Subject OR Lesson logic
+      if (parentContext.subject) {
+          // IF we already have a subject, this MUST be a Lesson (Unit)
+          log.info(`   [CTX] Recognized Lesson/Unit: ${cleanName} (Parent Subject: ${parentContext.subject.name})`);
+          newContext.lessonName = cleanName;
       } else {
-        log.error(`Error processing folder ${folderId}`, error);
+          // Else it is a Subject
+          log.info(`   [CTX] Recognized Subject: ${cleanName} (Parent: ${parentContext.gradeName || parentContext.streamName || parentContext.levelName || 'ROOT'})`);
+          newContext.subject = { id: "TEMP", name: cleanName }; 
       }
-      this.stats.errorsEncountered++;
-    }
+      return newContext;
   }
 
-  // --- ENTRY POINT ---
-  async migrate(): Promise<void> {
-    try {
-      log.info("🚀 Starting Drive Migration...");
-
-      // 1. Load credentials from Storage Node (Default ID=1)
-      const storageNode = await prisma.storageNode.findUnique({
-        where: { id: this.storageNodeId },
-      });
-
-      if (!storageNode) {
-        throw new Error(
-          `❌ Storage Node with ID ${this.storageNodeId} not found in database. Run "bun run seed" first.`
-        );
+  // --- 2.5 Ensure Physical Folder Structure ---
+  private async ensureCanonicalFolder(context: HierarchyContext): Promise<string> {
+      // Build correct path string: /A-L / Grade 12 / Science Stream / [Subject]
+      const pathParts: string[] = [];
+      
+      if (context.levelName) pathParts.push(context.levelName);
+      else if (context.isFlexibleRoot && context.flexibleTags.length > 0) {
+          // For flexible roots, we might want "IELTS" -> "Listening"
+          if (context.levelName) pathParts.push(context.levelName); // e.g. IELTS
+          
+          // Child folders? 
+          if (context.subject) pathParts.push(context.subject.name);
       }
+      
+      if (context.gradeName) pathParts.push(context.gradeName);
+      if (context.streamName) pathParts.push(context.streamName);
+      if (context.subject) pathParts.push(context.subject.name);
 
-      if (!storageNode.refreshToken) {
-        throw new Error(
-          `❌ Storage Node has no refresh token. Re-run "bun run seed" to configure Google credentials.`
-        );
+      if (pathParts.length === 0) return UPLOAD_FOLDER_ID!;
+
+      let currentParentId = UPLOAD_FOLDER_ID!;
+      let fullPath = "";
+
+      for (const part of pathParts) {
+          fullPath += `/${part}`;
+          if (this.folderPathCache.has(fullPath)) {
+              currentParentId = this.folderPathCache.get(fullPath)!;
+              continue;
+          }
+
+          // Check Drive
+          // Sanitize name for Drive query
+          const cleanPart = part.replace(/'/g, "\\'");
+          try {
+             const res = await drive.files.list({
+               q: `'${currentParentId}' in parents and name = '${cleanPart}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+               fields: 'files(id)',
+             });
+             
+             if (res.data.files && res.data.files.length > 0) {
+                 currentParentId = res.data.files[0].id!;
+             } else {
+                 // Create
+                 log.info(`   > [FOLDER] Creating: ${part}`);
+                 const newFolder = await drive.files.create({
+                     requestBody: {
+                         name: part,
+                         mimeType: 'application/vnd.google-apps.folder',
+                         parents: [currentParentId]
+                     },
+                     fields: 'id'
+                 });
+                 currentParentId = newFolder.data.id!;
+             }
+             this.folderPathCache.set(fullPath, currentParentId);
+          } catch (e) {
+              log.error(`   > Folder Check Fail: ${part}`, e as Error);
+              // Fallback to current parent if fail?
+          }
       }
-
-      log.info(
-        `📦 Using Storage Node: ${storageNode.name} (${storageNode.email})`
-      );
-
-      // Set credentials from storage node
-      this.oauth2Client.setCredentials({
-        refresh_token: storageNode.refreshToken,
-      });
-
-      // Validate required environment variables (folders only)
-      if (!env.ROOT_FOLDER_ID) {
-        throw new Error("❌ ROOT_FOLDER_ID not configured in .env");
-      }
-      if (!env.UPLOAD_FOLDER_ID) {
-        throw new Error("❌ UPLOAD_FOLDER_ID not configured in .env");
-      }
-
-      log.info(`Source Root: ${env.ROOT_FOLDER_ID}`);
-      log.info(`Target Flat: ${env.UPLOAD_FOLDER_ID}`);
-
-      // 2. Verify folders exist in Drive
-      try {
-        const rootFolder = await this.drive.files.get({
-          fileId: env.ROOT_FOLDER_ID,
-          fields: "id, name, mimeType",
-        });
-        log.info(`✓ Verified ROOT folder: "${rootFolder.data.name}"`);
-      } catch (e) {
-        throw new Error(
-          `Cannot access ROOT_FOLDER_ID ${env.ROOT_FOLDER_ID}. Check permissions or ID.`
-        );
-      }
-
-      try {
-        const uploadFolder = await this.drive.files.get({
-          fileId: env.UPLOAD_FOLDER_ID,
-          fields: "id, name, mimeType",
-        });
-        log.info(`✓ Verified UPLOAD folder: "${uploadFolder.data.name}"`);
-      } catch (e) {
-        throw new Error(
-          `Cannot access UPLOAD_FOLDER_ID ${env.UPLOAD_FOLDER_ID}. Check permissions or ID.`
-        );
-      }
-
-      // 3. Ensure System User Exists
-      await prisma.user.upsert({
-        where: { id: "system-sync" },
-        update: {},
-        create: {
-          id: "system-sync",
-          email: "system-sync@resilientlearn.com",
-          name: "System Bot",
-          role: "ADMIN",
-          isOnboarded: true,
-        },
-      });
-
-      // 4. Start Recursion
-      await this.processFolder(env.ROOT_FOLDER_ID);
-
-      // 5. Finish
-      this.stats.endTime = new Date();
-      this.printSummary();
-    } catch (error) {
-      log.error("Fatal Migration Error", error as Error);
-      process.exit(1);
-    } finally {
-      await prisma.$disconnect();
-    }
+      return currentParentId;
   }
 
-  private printSummary() {
-    const duration =
-      (new Date().getTime() - this.stats.startTime.getTime()) / 1000;
-    console.log(`
-    ========================================
-    🏁 MIGRATION COMPLETE
-    ========================================
-    📂 Folders Scanned: ${this.stats.foldersScanned}
-    📄 Files Found:     ${this.stats.filesProcessed}
-    ✅ Files Migrated:  ${this.stats.filesMigrated}
-    ⏭️  Files Skipped:   ${this.stats.filesSkipped}
-    🏷️  Tags Created:    ${this.stats.tagsCreated}
-    ❌ Errors:          ${this.stats.errorsEncountered}
-    ⏱️  Time Taken:      ${duration}s
-    ========================================
-    `);
+  private async migrateFile(file: drive_v3.Schema$File, context: HierarchyContext) {
+      if (!file.id || !file.name) return;
+      if (this.uniqueFileLog.has(file.id)) return;
+      this.uniqueFileLog.add(file.id);
+
+      log.info(`   [FILE] Found: ${file.name} (Type: ${file.mimeType})`);
+
+      // --- 1. Deduplication Check ---
+      const existing = await prisma.resource.findFirst({
+          where: { originalDriveId: file.id }
+      });
+      
+      if (existing) {
+          log.info(`   [SKIP] Duplicate: ${file.name}`);
+          this.stats.filesSkipped++;
+          return;
+      }
+
+      // --- 2. Resolve Final Tag Chain ---
+      const finalTagIds: string[] = [];
+      
+      // A. Inherited Attributes (from Flattened Folders)
+      if (context.inheritedTags && context.inheritedTags.length > 0) {
+          finalTagIds.push(...context.inheritedTags);
+      }
+
+      // (Simplified logic to reuse code - keeping existing tag logic unchanged essentially)
+      if (context.isFlexibleRoot) {
+          finalTagIds.push(...context.flexibleTags);
+          const extra = await this.extractFileAttributes(file.name); 
+          finalTagIds.push(...extra);
+      } else {
+          // Strict School Logic
+          const levelTag = context.levelName 
+            ? await prisma.tag.findFirst({ where: { name: { contains: context.levelName, mode: 'insensitive' }, group: "LEVEL" } })
+            : null;
+          if (levelTag) finalTagIds.push(levelTag.id);
+
+          let gradeTag = null;
+          if (context.gradeName && levelTag) {
+             const gradeNum = context.gradeName.match(/\d+/)?.[0];
+             if (gradeNum) {
+                 gradeTag = await prisma.tag.findFirst({ 
+                     where: { name: { contains: `Grade ${gradeNum}`, mode: 'insensitive' }, parentId: levelTag.id } 
+                 });
+             }
+          }
+          if (gradeTag) finalTagIds.push(gradeTag.id);
+
+          let streamTag = null;
+          if (context.streamName && gradeTag) {
+              const cleanStream = context.streamName.replace(/Stream/i, "").trim();
+              streamTag = await prisma.tag.findFirst({
+                  where: { name: { contains: cleanStream, mode: 'insensitive' }, parentId: gradeTag.id }
+              });
+          }
+          if (streamTag) finalTagIds.push(streamTag.id);
+          
+          let parentForSubject = streamTag ? streamTag.id : (gradeTag ? gradeTag.id : null);
+          if (parentForSubject && context.subject) {
+              if (!/attribute/i.test(context.subject.name)) {
+                  const subjectTag = await this.ensureTag(context.subject.name, "SUBJECT", parentForSubject);
+                  finalTagIds.push(subjectTag.id);
+                  // parentForSubject = subjectTag.id; 
+              }
+          }
+          // E. Lesson / Unit
+          if (parentForSubject && context.lessonName) {
+               const lessonTag = await this.ensureTag(context.lessonName, "LESSON", parentForSubject);
+               finalTagIds.push(lessonTag.id);
+          }
+
+          const extra = await this.extractFileAttributes(file.name);
+          finalTagIds.push(...extra);
+      }
+      
+      if (finalTagIds.length === 0) {
+          this.stats.filesSkipped++;
+          return;
+      }
+
+      // --- 3. Copy File to Canonical Folder ---
+      // Determine Target Folder
+      const targetParentId = await this.ensureCanonicalFolder(context);
+
+      try {
+          if (this.stats.filesMigrated % 10 === 0) log.info(`Migrating... ${file.name}`);
+          
+          const newFile = await drive.files.copy({
+              fileId: file.id!,
+              requestBody: {
+                  parents: [targetParentId], // NEW PARENT
+                  name: file.name
+              }
+          });
+
+          if (newFile.data.id) {
+               await prisma.resource.create({
+                   data: {
+                       title: file.name!,
+                       description: "Auto-migrated from Legacy Drive",
+                       driveFileId: newFile.data.id,
+                       originalDriveId: file.id!,
+                       mimeType: file.mimeType,
+                       source: "SYSTEM",
+                       status: "APPROVED",
+                       uploaderId: "system-sync",
+                       storageNodeId: 1,
+                       tags: {
+                           connect: finalTagIds.map(id => ({ id }))
+                       }
+                   }
+               });
+               this.stats.filesMigrated++;
+          }
+      } catch (e: any) {
+          log.error(`Failed to copy ${file.name}: ${e.message}`);
+          this.stats.errors++;
+           if (e.code === 403) {
+            await new Promise(r => setTimeout(r, 2000));
+        }
+      }
+  }
+
+  // --- Helpers ---
+
+  private async extractFileAttributes(fileName: string): Promise<string[]> {
+      const extraTagIds: string[] = [];
+      const { TagPatterns } = await import("../utils/tag-patterns");
+      
+      for (const p of TagPatterns) {
+          if (p.isHierarchy) continue; // Only attributes
+          if (p.pattern.test(fileName)) {
+               const match = fileName.match(p.pattern);
+               if (match) {
+                   const matchedText = match[0];
+                   const tag = await this.ensureTag(matchedText, p.group, null);
+                   extraTagIds.push(tag.id);
+               }
+          }
+      }
+      return extraTagIds;
+  }
+
+  private async ensureTag(name: string, group: string, parentId: string | null) {
+      // Find First or Create
+      const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+      const existing = await prisma.tag.findFirst({
+        where: { name: { equals: name, mode: 'insensitive' }, parentId }
+      });
+      if (existing) return existing;
+      
+      return await prisma.tag.create({
+          data: { name: name.trim(), slug, group, parentId, source: "SYSTEM" }
+      });
   }
 }
 
-// Execute
+// Helper to Run
 if (import.meta.main) {
-  new DriveMigration().migrate();
+    const migrator = new DriveMigrator();
+    migrator.run();
 }

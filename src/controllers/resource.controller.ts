@@ -67,7 +67,7 @@ export const resourceController = new Elysia()
       try {
         const { 
             file, 
-            tags: legacyTags, // Keep for backward compatibility or extra tags
+            tags: legacyTags,
             title, 
             description,
             level,
@@ -84,16 +84,13 @@ export const resourceController = new Elysia()
           return errorResponse("File is required", 400);
         }
 
-        log.info("Starting user resource upload", {
+        log.info("Starting user resource upload (Store Strategy)", {
           userId: user.userId,
-          fileName: file.name,
-          hierarchy: { level, stream, subject, grade, medium, resourceType, lesson }
+          fileName: file.name
         });
 
-        // Collect all tag promises
+        // Collect all tags via Helper
         const tagPromises: Promise<any>[] = [];
-
-        // 1. Handle Explicit Hierarchy Fields
         if (level) tagPromises.push(tagService.getOrCreateTag(level, "LEVEL"));
         if (stream) tagPromises.push(tagService.getOrCreateTag(stream, "STREAM"));
         if (subject) tagPromises.push(tagService.getOrCreateTag(subject, "SUBJECT"));
@@ -101,47 +98,31 @@ export const resourceController = new Elysia()
         if (medium) tagPromises.push(tagService.getOrCreateTag(medium, "MEDIUM"));
         if (resourceType) tagPromises.push(tagService.getOrCreateTag(resourceType, "RESOURCE_TYPE"));
         if (lesson) tagPromises.push(tagService.getOrCreateTag(lesson, "LESSON"));
-
-        // 2. Handle Legacy/Extra Tags (Comma Separated)
-        if (legacyTags && legacyTags.trim() !== "") {
-             const extraTags = legacyTags.split(",").map(t => t.trim()).filter(t => t.length > 0);
-             extraTags.forEach(t => tagPromises.push(tagService.getOrCreateTag(t))); // No group by default
+        
+        if (legacyTags) {
+             legacyTags.split(",").map(t => t.trim()).filter(Boolean).forEach(t => 
+                 tagPromises.push(tagService.getOrCreateTag(t))
+             );
         }
 
         const resolvedTags = await Promise.all(tagPromises);
         
         if (resolvedTags.length === 0) {
            set.status = 400;
-           return errorResponse("At least one tag or hierarchy field is required", 400);
+           return errorResponse("At least one tag is required", 400);
         }
 
-        // Upload file to UPLOAD_FOLDER_ID
+        // 1. Ensure STORE Folder (User Uploads -> Bucket)
+        const storeFolderId = await driveService.ensureStoreFolder();
+
+        // 2. Upload
         const { Readable } = await import("stream");
         // @ts-ignore
         const streamData = Readable.from(file.stream());
+        const driveFile = await driveService.uploadFile(streamData, file.name, storeFolderId, file.type);
 
-        const uploadFolderId = process.env.UPLOAD_FOLDER_ID;
-        if (!uploadFolderId) {
-          set.status = 500;
-          return errorResponse("Upload folder not configured", 500);
-        }
-
-        const driveFile = await driveService.uploadFile(
-          streamData,
-          file.name,
-          uploadFolderId,
-          file.type
-        );
-
-        log.info("File uploaded to Drive", {
-          driveFileId: driveFile.id,
-          fileName: file.name,
-        });
-
-        // Create Resource in DB with USER source
+        // 3. Create Resource
         const tagIds = resolvedTags.map((tag) => tag.id);
-
-        // Add USER tag for backend use
         const userSourceTag = await tagService.getOrCreateTag("USER");
         tagIds.push(userSourceTag.id);
 
@@ -151,39 +132,26 @@ export const resourceController = new Elysia()
           driveFileId: driveFile.id,
           mimeType: file.type || "application/octet-stream",
           fileSize: BigInt(file.size),
-          status: "APPROVED", // Auto-approved for now
-          source: "USER", // Mark as user-uploaded
+          status: "APPROVED", // Default Approved as requested
+          source: "USER",
           uploaderId: user.userId,
           tagIds,
           storageNodeId: 1, 
         });
 
-        log.info("User resource created", {
-          resourceId: resource.id,
-          userId: user.userId,
-          tags: resolvedTags.map(t => t.name),
-        });
-
-        set.status = 201;
-        return successResponse(
-          resource,
-          "Resource uploaded successfully."
-        );
+        return successResponse(resource, "Resource uploaded successfully (Store Bucket).");
       } catch (error) {
         log.error("User upload error", error as Error);
         set.status = 500;
-        const message =
-          error instanceof AppError ? error.message : "Upload failed";
-        return errorResponse(message, 500);
+        return errorResponse(error instanceof AppError ? error.message : "Upload failed", 500);
       }
     },
     {
       body: t.Object({
         file: t.File(),
-        tags: t.Optional(t.String({ description: "Comma-separated tag names (Legacy)" })),
+        tags: t.Optional(t.String()),
         title: t.Optional(t.String()),
         description: t.Optional(t.String()),
-        // New Hierarchy Fields
         level: t.Optional(t.String()),
         stream: t.Optional(t.String()),
         subject: t.Optional(t.String()),
@@ -192,12 +160,7 @@ export const resourceController = new Elysia()
         resourceType: t.Optional(t.String()),
         lesson: t.Optional(t.String())
       }),
-      detail: {
-        tags: ["Resource"],
-        summary: "Upload Resource (User)",
-        description:
-          "Upload a resource with hierarchy tags. Creates new tags if not exist (e.g. new Lesson).",
-      },
+      detail: { tags: ["Resource"] }
     }
   )
   .get(
@@ -205,182 +168,138 @@ export const resourceController = new Elysia()
     async ({ params, headers, set }) => {
       try {
         const resource = await resourceService.getResourceById(params.id);
-
-        if (!resource) {
-          set.status = 404;
-          return errorResponse("Resource not found", 404);
+        if (!resource || !resource.driveFileId) {
+            set.status = 404; return errorResponse("Resource not found", 404);
         }
+        
+        const { stream, contentType, contentLength } = await driveService.getStream(resource.driveFileId, headers["range"]);
 
-        if (!resource.driveFileId) {
-          set.status = 400;
-          return errorResponse("Resource does not have a file associated", 400);
-        }
-
-        log.info("Streaming resource", {
-          resourceId: params.id,
-          driveFileId: resource.driveFileId,
-        });
-
-        // Get stream from Drive service
-        const { stream, contentType, contentLength } =
-          await driveService.getStream(resource.driveFileId, headers["range"]);
-
-        // Increment download count (non-blocking)
         resourceService.incrementDownloadCount(params.id).catch(() => {});
-
-        // Set response headers
         set.headers["Content-Type"] = contentType;
-        if (contentLength) {
-          set.headers["Content-Length"] = contentLength;
-        }
-
-        // Handle Range requests
-        if (headers["range"]) {
-          set.status = 206; // Partial Content
-          set.headers["Accept-Ranges"] = "bytes";
-        }
+        if (contentLength) set.headers["Content-Length"] = String(contentLength);
+        if (headers["range"]) { set.status = 206; set.headers["Accept-Ranges"] = "bytes"; }
 
         return stream;
       } catch (error) {
         log.error("Stream error", error as Error);
         set.status = 500;
-        const message =
-          error instanceof AppError ? error.message : "Failed to stream file";
-        return errorResponse(message, 500);
+        return errorResponse("Streaming failed", 500);
       }
     },
-    {
-      detail: {
-        tags: ["Resource"],
-      },
-    }
+    { detail: { tags: ["Resource"] } }
   )
-  // --- LIBRARY ENDPOINTS ---
-  .get(
-    "/library/hierarchy",
-    async ({ set }) => {
-      try {
-        const hierarchy = await libraryService.getLibraryHierarchy();
-        return successResponse(
-          hierarchy,
-          "Library hierarchy fetched successfully"
-        );
-      } catch (error) {
-        log.error("Library fetch error", error as Error);
-        set.status = 500;
-        return errorResponse("Failed to fetch library", 500);
-      }
-    },
-    {
-      detail: {
-        tags: ["Resource"],
-      },
-    }
-  )
-  .get(
-    "/library/tags",
-    async ({ set }) => {
-      try {
-        const tags = await libraryService.getAvailableTagsForUpload();
-        return successResponse(tags, "Available tags fetched successfully");
-      } catch (error) {
-        log.error("Tags fetch error", error as Error);
-        set.status = 500;
-        return errorResponse("Failed to fetch tags", 500);
-      }
-    },
-    {
-      detail: {
-        tags: ["Resource"],
-      },
-    }
-  )
-  // --- ADMIN UPLOAD ENDPOINT ---
   .post(
     "/admin/upload",
     async ({ body, user, set }) => {
-      if (!user) {
-        set.status = 401;
-        return errorResponse("Unauthorized", 401);
-      }
-
-      // Check if user is ADMIN
-      if (user.role !== Role.ADMIN) {
+      if (!user || user.role !== Role.ADMIN) {
         set.status = 403;
-        return errorResponse("Only admins can use this endpoint", 403);
+        return errorResponse("Admins only", 403);
       }
 
       try {
-        const { file, tagIds, title, description } = body;
+        const { 
+            file, title, description,
+            level, stream, subject, grade, medium, resourceType, lesson
+        } = body;
 
-        if (!file) {
-          set.status = 400;
-          return errorResponse("File is required", 400);
+        if (!file) { set.status = 400; return errorResponse("File required", 400); }
+
+        // 1. Resolve Hierarchy Tags (for Folder Building)
+        // We need the ACTUAL NAMES for folder building, and IDs for DB.
+        // tagService.getOrCreateTag returns { id, name, group... }
+        
+        const hierarchyMap: any = {};
+        const allTags = [];
+        let currentParentId: string | null = null;
+
+        // 1. Level (A/L)
+        if (level) { 
+            const t = await tagService.getOrCreateTag(level, "LEVEL", currentParentId); 
+            hierarchyMap.level = t; allTags.push(t); 
+            currentParentId = t.id;
         }
 
-        if (!tagIds || tagIds.length === 0) {
-          set.status = 400;
-          return errorResponse("At least one tag is required", 400);
+        // 2. Grade (12) - NOW Second
+        if (grade) { 
+            const t = await tagService.getOrCreateTag(grade, "GRADE", currentParentId); 
+            hierarchyMap.grade = t; allTags.push(t); 
+            currentParentId = t.id;
         }
 
-        log.info("Admin resource upload", {
-          userId: user.userId,
-          fileName: file.name,
-          tagCount: tagIds.length,
-        });
+        // 3. Stream (Science) - NOW Third (Optional)
+        if (stream) { 
+            const t = await tagService.getOrCreateTag(stream, "STREAM", currentParentId); 
+            hierarchyMap.stream = t; allTags.push(t); 
+            currentParentId = t.id;
+        }
 
-        // Upload file to Drive
+        // 4. Subject (Physics)
+        if (subject) { 
+            const t = await tagService.getOrCreateTag(subject, "SUBJECT", currentParentId); 
+            hierarchyMap.subject = t; allTags.push(t); 
+            currentParentId = t.id;
+        }
+        
+        // 5. Lesson (Unit 1)
+        if (lesson) { 
+            const t = await tagService.getOrCreateTag(lesson, "LESSON", currentParentId); 
+            hierarchyMap.lesson = t; allTags.push(t); 
+            currentParentId = t.id;
+        }
+        
+        // Attributes (don't affect folder structure, but added to DB)
+        if (medium) allTags.push(await tagService.getOrCreateTag(medium, "MEDIUM"));
+        if (resourceType) allTags.push(await tagService.getOrCreateTag(resourceType, "RESOURCE_TYPE"));
+
+        // 2. Build Canonical Folder
+        const targetFolderId = await driveService.ensureCanonicalFolder(hierarchyMap);
+
+        // 3. Upload
         const { Readable } = await import("stream");
         // @ts-ignore
-        const stream = Readable.from(file.stream());
+        const streamData = Readable.from(file.stream());
+        const driveFile = await driveService.uploadFile(streamData, file.name, targetFolderId, file.type);
 
-        const driveFile = await driveService.uploadFile(
-          stream,
-          file.name,
-          process.env.UPLOAD_FOLDER_ID || "",
-          file.type
-        );
-
-        // Create Resource in DB marked as SYSTEM
-        // Add ADMIN tag for backend use (to distinguish from user uploads)
-        const adminSourceTag = await tagService.getOrCreateTag("ADMIN");
-        const allTagIds = [...tagIds, adminSourceTag.id];
+        // 4. Create Resource
+        const adminTag = await tagService.getOrCreateTag("ADMIN");
+        const tagIds = allTags.map(t => t.id).concat(adminTag.id);
 
         const resource = await resourceService.createResource({
           title: title || file.name,
-          description: description || "Admin uploaded resource",
+          description: description || "Admin Upload",
           driveFileId: driveFile.id,
           mimeType: file.type || "application/octet-stream",
           fileSize: BigInt(file.size),
-          status: "APPROVED", // Auto-approve admin uploads
-          source: "SYSTEM", // Mark as system resource
+          status: "APPROVED",
+          source: "SYSTEM",
           uploaderId: user.userId,
-          tagIds: allTagIds, // Connect provided tags + ADMIN tag
-          storageNodeId: 1, // Use default storage
+          tagIds,
+          storageNodeId: 1
         });
 
-        log.info("Admin resource created", { resourceId: resource.id });
-        return successResponse(
-          resource,
-          "Resource uploaded successfully (marked as SYSTEM)"
-        );
+        return successResponse(resource, "Admin Resource Uploaded (Canonical Hierarchy)");
+
       } catch (error) {
         log.error("Admin upload error", error as Error);
         set.status = 500;
-        const message =
-          error instanceof AppError ? error.message : "Upload failed";
-        return errorResponse(message, 500);
+        return errorResponse(error instanceof AppError ? error.message : "Upload failed", 500);
       }
     },
     {
       body: t.Object({
         file: t.File(),
-        tagIds: t.Array(t.String()),
         title: t.Optional(t.String()),
         description: t.Optional(t.String()),
+        // Hierarchy Params
+        level: t.Optional(t.String()),
+        stream: t.Optional(t.String()),
+        subject: t.Optional(t.String()),
+        grade: t.Optional(t.String()),
+        lesson: t.Optional(t.String()),
+        // Attribute Params
+        medium: t.Optional(t.String()),
+        resourceType: t.Optional(t.String())
       }),
-      detail: {
-        tags: ["Resource"],
-      },
+      detail: { tags: ["Resource"] }
     }
   );

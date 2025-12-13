@@ -4,19 +4,15 @@ import { OAuth2Client } from "google-auth-library";
 import { PrismaClient } from "@prisma/client";
 import { env } from "../config/env";
 import { log } from "../utils/logger";
+import { categorizeFolder } from "../utils/tag-patterns";
 
 const prisma = new PrismaClient();
 
 // Context to track where we are in the hierarchy
 interface SyncContext {
-  levelId?: string;
-  streamId?: string;
-  subjectId?: string;
-  gradeId?: string;
-  mediumId?: string;
-  // Accumulates all valid tag IDs encountered in the path
+  // Accumulates all valid HIERARCHY tag IDs encountered in the path
   tagIds: string[];
-  // Tracks the immediate parent tag for the current folder
+  // Tracks the immediate parent tag for the current folder (Hierarchy Parent)
   currentParentTagId?: string | null;
   currentParentSlug?: string | null; // Track parent slug for uniqueness
 }
@@ -82,7 +78,7 @@ class DriveSync {
   }
 
   /**
-   * Idempotently ensure a Tag exists in the DB
+   * Idempotently ensure a Tag exists in the DB (HIERARCHY TAGS ONLY)
    */
   private async ensureTag(name: string, group?: string, parentId?: string | null, parentSlug?: string | null): Promise<string> {
     const cleanName = name.trim();
@@ -95,21 +91,19 @@ class DriveSync {
       .replace(/[^\w-]/g, "");
 
     // If we have a parent context, prefix it to ensure uniqueness
-    // E.g. "history" -> "art-stream-history" vs "6-9-class-subjects-history"
     let finalSlug = baseSlug;
     if (parentSlug) {
-        // Avoid double prefixing if the name itself is compound (unlikely but safe)
         if (!baseSlug.startsWith(parentSlug)) {
             finalSlug = `${parentSlug}-${baseSlug}`;
         }
     }
 
-    // Try to find by Slug first (Precision Match)
+    // Try to find by Slug first
     let tag = await prisma.tag.findFirst({
       where: { slug: finalSlug },
     });
     
-    // Fallback: Check by Name AND ParentId (Collision Handling)
+    // Fallback: Check by Name AND ParentId
     if (!tag) {
         tag = await prisma.tag.findFirst({
             where: { 
@@ -126,19 +120,19 @@ class DriveSync {
           slug: finalSlug,
           group: group || null,
           source: "SYSTEM",
-          parentId: parentId || null
+          parentId: parentId || null // Strict Hierarchy
         },
       });
-      // console.log(`Created tag: ${cleanName} (${group}) [${finalSlug}]`);
+      this.stats.tagsCreated++;
     } else {
-      // Upsert/Update logic remains same
+      // Upsert/Update logic ensure it stays consistent
       if (tag.group !== group || tag.parentId !== parentId || tag.slug !== finalSlug) {
          await prisma.tag.update({
              where: { id: tag.id },
              data: { 
                  group: group || tag.group,
-                 parentId: parentId, // Ensure hierarchy is enforced
-                 slug: finalSlug     // Enforce unique slug
+                 parentId: parentId,
+                 slug: finalSlug 
              }
          });
       }
@@ -146,52 +140,13 @@ class DriveSync {
     return tag.id;
   }
   
-  // Helper to get slug for context tracking
   async getTagSlug(tagId: string): Promise<string | null> {
       const tag = await prisma.tag.findUnique({ where: { id: tagId }, select: { slug: true } });
       return tag?.slug || null;
   }
 
-  /**
-   * Safe delay to avoid hitting rate limits
-   */
   private async delay(): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, this.API_DELAY_MS));
-  }
-
-  /**
-   * Heuristics to identify folder type based on name
-   */
-  private isLevelName(name: string): boolean {
-    // "A/L Subjects", "O/L Subjects", "Primary Class Subjects"
-    return /Subjects$/i.test(name);
-  }
-
-  private isStreamName(name: string): boolean {
-    // Anchored Strict Stream Check
-    // Includes "Science Stream"
-    // "Subjects" folders are now LEVELS, so we skip them here.
-    if (/Subjects\s*$/i.test(name)) return false; 
-    
-    // Require strict "Stream" suffix to avoid confusing Subjects (e.g. "Science", "Art") with Streams
-    return /^(science|commerce|arts|tech)\s+stream\s*$/i.test(name) || 
-           /stream\s*$/i.test(name);
-  }
-
-  private isGradeName(name: string): boolean {
-    // Anchored Grade Check
-    return /^(grade\s+\d+|grade\s+1[0-3]|o\/l|a\/l|ordinary\s+level|advanced\s+level)\s*$/i.test(name);
-  }
-
-  private isMediumName(name: string): boolean {
-    // Anchored Medium Check - MUST start with language
-    return /^(english|sinhala|tamil|urdu|french|japanese)(?:\s+medium)?\s*$/i.test(name);
-  }
-  
-  private isLessonName(name: string): boolean {
-    // Expanded Lesson Check
-    return /^(unit|lesson|chapter|module|section|topic|week|day|part)(\s+\d+)?/i.test(name) ||
-           /^\d+[\.\-\—\s]/i.test(name); // "01. Introduction"
   }
 
   /**
@@ -232,94 +187,60 @@ class DriveSync {
           if (file.mimeType === this.FOLDER_MIME) {
             this.stats.foldersScanned++;
             
-            // TRIM NAME TO HANDLE INVISIBLE TRAILING SPACES FROM DRIVE
             const name = file.name.trim();
+            const nextContext: SyncContext = { ...currentContext, tagIds: [...currentContext.tagIds] };
             
-            // --- CONTEXT AWARE TAGGING LOGIC ---
-            const nextContext: SyncContext = { 
-              ...currentContext, 
-              tagIds: [...currentContext.tagIds] // Clone array
-            };
+            // --- NEW PATTERN ENGINE LOGIC ---
+            const patternMatch = categorizeFolder(name);
+            
+            if (patternMatch) {
+                // If it's a HIERARCHY folder (Level, Grade, Subject, Stream)
+                if (patternMatch.isHierarchy) {
+                    const parentId = currentContext.currentParentTagId; 
+                    const parentSlug = currentContext.currentParentSlug;
 
-            // --- SPECIAL CASE: CONTAINER FOLDERS ---
-            // Determine hierarchy: LEVEL -> STREAM -> SUBJECT -> GRADE...
+                    const tagId = await this.ensureTag(name, patternMatch.group, parentId, parentSlug);
+                    const tagSlug = await this.getTagSlug(tagId);
 
-            let tagGroup = "SUBJECT"; // Default fallback
-            let tagId: string | undefined;
-            const parentId = currentContext.currentParentTagId; 
-            const parentSlug = currentContext.currentParentSlug;
+                    nextContext.tagIds.push(tagId);
+                    nextContext.currentParentTagId = tagId;
+                    nextContext.currentParentSlug = tagSlug;
+                    
+                    log.info(`${indent}[FOLDER] ${name} -> [${patternMatch.group}]`);
+                    await this.processFolder(file.id, nextContext, depth + 1);
 
-            if (!nextContext.levelId && this.isLevelName(name)) {
-                tagGroup = "LEVEL";
-                // Levels are root, so no parentSlug prefix usually, but ok.
-                tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
-                nextContext.levelId = tagId;
-            } else if (!nextContext.streamId && this.isStreamName(name)) {
-                tagGroup = "STREAM";
-                tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
-                nextContext.streamId = tagId;
-            } else if (nextContext.streamId || nextContext.levelId) {
-                // If we are inside a Stream or Level, treat as Subject
-                 if (this.isGradeName(name)) {
-                     tagGroup = "GRADE";
-                 } else if (this.isMediumName(name)) {
-                     tagGroup = "MEDIUM";
-                 } else if (this.isLessonName(name)) {
-                     tagGroup = "LESSON";
-                 } else {
-                    // It's a Subject or Resource Type
-                    tagGroup = nextContext.gradeId ? "RESOURCE_TYPE" : "SUBJECT";
-                 }
-                 tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
-            }
-            else if (!nextContext.gradeId) {
-              if (this.isGradeName(name)) {
-                tagGroup = "GRADE";
-                tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
-                nextContext.gradeId = tagId;
-              } else {
-                 // Warning: Folder found where Grade expected, but doesn't look like Grade
-                 log.warn(`${indent}[WARN] Expected Grade, found: ${name}`);
-              }
-            }
-            else if (!nextContext.mediumId) {
-              if (this.isMediumName(name)) {
-                tagGroup = "MEDIUM";
-                tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
-                nextContext.mediumId = tagId;
-              } else {
-                 log.warn(`${indent}[WARN] Expected Medium, found: ${name}`);
-              }
-            }
-            else {
-              // We are deep (Level 5+). Content organization.
-              if (this.isLessonName(name)) {
-                 tagGroup = "LESSON";
-                 tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
-              } else {
-                 tagGroup = "RESOURCE_TYPE"; // Fallback for Syllabus, Teacher Guide folders
-                 tagId = await this.ensureTag(name, tagGroup, parentId, parentSlug);
-              }
-            }
+                } else {
+                    // It is an ATTRIBUTE folder (Medium, Type)
+                    // ACTION: IGNORE IT (Flatten Logic).
+                    // We log it, but we do NOT create a tag, and we do NOT add to hierarchy context.
+                    // The files inside will just inherit the CURRENT hierarchy context (e.g. Grade 10 id).
+                    log.info(`${indent}[FLATTEN] Ignoring folder ${name} (Attribute: ${patternMatch.group})`);
+                    // Continue recursing, but pass SAME context (skipping this folder layer)
+                    await this.processFolder(file.id, currentContext, depth + 1); 
+                }
 
-            // If we successfully identified a tag for this folder, add it            
-            if (tagId) {
-                // Get the actual slug created to pass down
-                const createdSlug = await this.getTagSlug(tagId);
+            } else {
+                // No Match -> Assume it is a GENERIC SUBJECT or LESSON (Hierarchy)
+                // Default logic: If inside Grade, likely Subject. If inside Subject, likely Lesson.
+                const group = "SUBJECT"; // Default safe fallback or "LESSON"
+                // Actually, let's treat unknown folders as LESSIONS/TOPICS (Hierarchy)
+                // unless we want to be strict.
                 
+                const parentId = currentContext.currentParentTagId;
+                const parentSlug = currentContext.currentParentSlug;
+                
+                // Let's call it 'LESSON' to be safe for deep nesting
+                const tagId = await this.ensureTag(name, "LESSON", parentId, parentSlug);
+                const tagSlug = await this.getTagSlug(tagId);
+
                 nextContext.tagIds.push(tagId);
                 nextContext.currentParentTagId = tagId;
-                nextContext.currentParentSlug = createdSlug; // Pass down context
-                
-                log.info(`${indent}[FOLDER] ${name} -> [${tagGroup}]`);
-                await this.processFolder(file.id, nextContext, depth + 1);
-            } else {
-                // If no specific tag was identified for this folder,
-                // just pass the current context down without adding a new tag
-                // This means the folder itself isn't a "tag" but its contents inherit parent tags.
-                log.debug(`${indent}[FOLDER] ${name} -> No specific tag, inheriting context.`);
+                nextContext.currentParentSlug = tagSlug;
+
+                log.info(`${indent}[FOLDER] ${name} -> [LESSON/GENERIC]`);
                 await this.processFolder(file.id, nextContext, depth + 1);
             }
+
           } else {
             // Process File
             await this.upsertFileResource(file, currentContext.tagIds, indent);
@@ -337,41 +258,48 @@ class DriveSync {
   }
 
   /**
-   * Create or Update File Resource
+   * Create or Update Resource with SAFE MERGE Logic
    */
   private async upsertFileResource(
     file: drive_v3.Schema$File, 
-    tagIds: string[], 
+    hierarchyTagIds: string[], 
     indent: string
   ): Promise<void> {
     try {
       if (!file.id || !file.name) return;
-
       const mimeType = file.mimeType || "application/octet-stream";
       const fileSize = file.size ? BigInt(file.size) : null;
 
       // Check existence
       const existing = await prisma.resource.findFirst({
         where: { driveFileId: file.id },
-        include: { tags: { select: { id: true } } }
+        include: { tags: true }
       });
 
       if (existing) {
-        // UPDATE: Sync tags and metadata (Handle Moves)
-        // Only update if tags have changed to save DB writes? 
-        // For simplicity, we just update. Prisma is smart.
+        // SAFE MERGE:
+        // 1. Identify existing Attribute Tags (parentId: null) -> PRESERVE THEM
+        // 2. Identify new Hierarchy Tags (passed in arg) -> USE THEM (Overwrite old hierarchy)
+        
+        const existingAttributeTags = existing.tags.filter(t => t.parentId === null);
+        const attributeTagIds = existingAttributeTags.map(t => t.id);
+        
+        // Final List = New Hierarchy IDs + Old Attribute IDs
+        // Use Set to dedup just in case
+        const finalTagIds = Array.from(new Set([...hierarchyTagIds, ...attributeTagIds]));
+
         await prisma.resource.update({
           where: { id: existing.id },
           data: {
-            title: file.name, // In case name changed in Drive
+            title: file.name,
             tags: {
-              set: tagIds.map(id => ({ id })) // Replace old tags with new context
+              set: finalTagIds.map(id => ({ id }))
             }
           }
         });
-        // log.debug(`${indent}[UPDATED] ${file.name}`); 
+        // log.debug(`${indent}[UPDATED] ${file.name} (Preserved ${attributeTagIds.length} attributes)`);
       } else {
-        // CREATE: New import
+        // CREATE
         await prisma.resource.create({
           data: {
             title: file.name,
@@ -383,7 +311,7 @@ class DriveSync {
             status: "APPROVED", 
             source: "SYSTEM",
             tags: {
-              connect: tagIds.map(id => ({ id }))
+              connect: hierarchyTagIds.map(id => ({ id }))
             }
           }
         });
@@ -400,13 +328,12 @@ class DriveSync {
 
   public async sync(): Promise<void> {
     try {
-      log.info("🚀 Starting Smart Drive Sync...");
+      log.info("🚀 Starting Smart Drive Sync (Hybrid Architecture)...");
       
       if (!env.ROOT_FOLDER_ID) {
         throw new Error("ROOT_FOLDER_ID not configured.");
       }
 
-      // Ensure system user exists
       await prisma.user.upsert({
         where: { id: "system-sync" },
         update: {},
@@ -419,7 +346,7 @@ class DriveSync {
         },
       });
 
-      // Start Crawl
+      // Start Crawl with Empty Context
       await this.processFolder(env.ROOT_FOLDER_ID, { tagIds: [] });
 
       this.stats.endTime = new Date();
@@ -446,14 +373,13 @@ class DriveSync {
     console.log(`\n📊 Statistics:`);
     console.log(`  ├─ Folders Scanned: ${this.stats.foldersScanned}`);
     console.log(`  ├─ Files Processed: ${this.stats.filesProcessed}`);
-    console.log(`  ├─ Files Synced (Upserted): ${this.stats.filesUpserted}`);
+    console.log(`  ├─ Files Synced: ${this.stats.filesUpserted}`);
     console.log(`  ├─ Errors: ${this.stats.errorsEncountered}`);
     console.log(`  └─ Duration: ${(duration / 1000).toFixed(2)}s`);
     console.log("\n");
   }
 }
 
-// Run if executed directly
 if (import.meta.main) {
   new DriveSync().sync();
 }

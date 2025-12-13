@@ -1,342 +1,214 @@
+
 import { google, drive_v3 } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 import { env } from "../config/env";
 import { log } from "../utils/logger";
-import { AppError } from "../utils/error";
 import { Readable } from "stream";
 
-/**
- * Interface for Google Drive API responses
- */
-interface DriveFile {
-  id: string;
-  name: string;
-  mimeType: string;
-  webViewLink?: string;
-  size?: string;
-  createdTime?: string;
+// Define Hierarchy Context for Admin Uploads
+export interface HierarchyTags {
+  level?: { id: string; name: string };
+  stream?: { id: string; name: string };
+  grade?: { id: string; name: string };
+  subject?: { id: string; name: string };
+  lesson?: { id: string; name: string };
 }
 
-interface FolderCacheEntry {
-  id: string;
-  timestamp: number;
-}
-
-/**
- * Drive Service - Manages Google Drive operations with folder hierarchy support
- */
 class DriveService {
   private oauth2Client: OAuth2Client;
   private drive: drive_v3.Drive;
-  private folderCache: Map<string, FolderCacheEntry> = new Map();
-  private readonly CACHE_TTL = 3600000; // 1 hour in ms
-  private readonly FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
-  private initialized: boolean = false;
+  private folderPathCache = new Map<string, string>(); // Cache path -> folderId
 
   constructor() {
-    // Initialize OAuth2 Client
     this.oauth2Client = new OAuth2Client(
       env.GOOGLE_CLIENT_ID,
       env.GOOGLE_CLIENT_SECRET
     );
 
-    // Set credentials with refresh token from env (fallback)
     if (env.GOOGLE_REFRESH_TOKEN) {
       this.oauth2Client.setCredentials({
         refresh_token: env.GOOGLE_REFRESH_TOKEN,
       });
-      this.initialized = true;
     }
 
-    // Initialize Drive API
     this.drive = google.drive({
       version: "v3",
       auth: this.oauth2Client,
     });
   }
 
-  /**
-   * Initialize with credentials from Storage Node (for runtime use)
-   * This allows the drive service to use database-stored credentials
-   */
-  async initializeFromStorageNode(storageNodeId: number = 1): Promise<void> {
-    if (this.initialized) {
-      log.debug("Drive service already initialized, skipping");
-      return;
-    }
-
-    try {
-      const { PrismaClient } = await import("@prisma/client");
-      const prisma = new PrismaClient();
-
-      const storageNode = await prisma.storageNode.findUnique({
-        where: { id: storageNodeId },
-      });
-
-      await prisma.$disconnect();
-
-      if (!storageNode) {
-        log.warn(
-          `Storage Node ${storageNodeId} not found, using env credentials`
-        );
-        return;
-      }
-
-      if (!storageNode.refreshToken) {
-        log.warn(`Storage Node has no refresh token, using env credentials`);
-        return;
-      }
-
-      log.debug(
-        `Initializing DriveService with credentials from StorageNode: ${storageNode.name}`
-      );
-      this.oauth2Client.setCredentials({
-        refresh_token: storageNode.refreshToken,
-      });
-      this.initialized = true;
-    } catch (error) {
-      log.warn("Failed to initialize from storage node", error as Error);
-      // Fall back to env credentials
-    }
-  }
-
-  /**
-   * Ensure OAuth2 token is fresh by refreshing if needed
-   */
   private async ensureTokenValid(): Promise<void> {
-    try {
-      const credentials = this.oauth2Client.credentials;
-      if (!credentials.expiry_date || credentials.expiry_date < Date.now()) {
-        log.debug("Refreshing OAuth2 token");
-        const response = await this.oauth2Client.refreshAccessToken();
-        this.oauth2Client.setCredentials(response.credentials);
-      }
-    } catch (error) {
-      log.error("Failed to refresh token", error as Error);
-      throw new AppError("Google authentication failed", 401);
-    }
-  }
-  /**
-   * Get or create a folder by name within a parent folder
-   * Returns folder ID
-   */
-  private async ensureFolder(
-    parentId: string,
-    folderName: string
-  ): Promise<string> {
-    await this.ensureTokenValid();
-
-    // Check cache first
-    const cacheKey = `${parentId}/${folderName}`;
-    const cached = this.folderCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      log.debug("Using cached folder", { cacheKey });
-      return cached.id;
-    }
-
-    try {
-      // Search for existing folder
-      const response = await this.drive.files.list({
-        q: `'${parentId}' in parents and name='${folderName}' and mimeType='${this.FOLDER_MIME_TYPE}' and trashed=false`,
-        spaces: "drive",
-        fields: "files(id, name)",
-        pageSize: 1,
-      });
-
-      let folderId: string;
-
-      if (response.data.files && response.data.files.length > 0) {
-        folderId = response.data.files[0].id!;
-        log.debug("Found existing folder", { folderName, folderId });
-      } else {
-        // Create folder if not found
-        const createResponse = await this.drive.files.create({
-          requestBody: {
-            name: folderName,
-            mimeType: this.FOLDER_MIME_TYPE,
-            parents: [parentId],
-          },
-          fields: "id",
-        });
-
-        folderId = createResponse.data.id!;
-        log.info("Created new folder", { folderName, folderId });
-      }
-
-      // Cache the result
-      this.folderCache.set(cacheKey, {
-        id: folderId,
-        timestamp: Date.now(),
-      });
-
-      return folderId;
-    } catch (error) {
-      log.error("Error ensuring folder", error as Error);
-      throw new AppError(`Failed to manage folder: ${folderName}`, 500);
+    const credentials = this.oauth2Client.credentials;
+    if (!credentials.expiry_date || credentials.expiry_date < Date.now()) {
+      const response = await this.oauth2Client.refreshAccessToken();
+      this.oauth2Client.setCredentials(response.credentials);
     }
   }
 
   /**
-   * Ensure the complete folder hierarchy exists
-   * Segments: [grade, subject, lesson, medium]
-   * Returns the final parent folder ID
-   */
-  async ensureFolderHierarchy(segments: string[]): Promise<string> {
-    await this.ensureTokenValid();
-
-    if (!env.ROOT_FOLDER_ID) {
-      throw new AppError("ROOT_FOLDER_ID not configured", 500);
-    }
-
-    let parentId = env.ROOT_FOLDER_ID;
-
-    for (const segment of segments) {
-      if (!segment || segment.trim().length === 0) {
-        continue;
-      }
-      parentId = await this.ensureFolder(parentId, segment.trim());
-    }
-
-    return parentId;
-  }
-
-  /**
-   * Upload a file stream to Google Drive
-   * Returns file metadata
+   * Upload a file to Google Drive
    */
   async uploadFile(
     fileStream: Readable,
     fileName: string,
-    parentId: string,
-    mimeType: string = "application/octet-stream"
-  ): Promise<DriveFile> {
+    folderId: string,
+    mimeType: string
+  ): Promise<{ id: string; webViewLink?: string }> {
     await this.ensureTokenValid();
 
     try {
       const response = await this.drive.files.create({
         requestBody: {
           name: fileName,
-          parents: [parentId],
-          mimeType,
+          parents: [folderId],
         },
         media: {
           mimeType,
           body: fileStream,
         },
-        fields: "id, name, mimeType, webViewLink, size, createdTime",
+        fields: "id, webViewLink",
       });
 
-      const file = response.data as DriveFile;
-      log.info("File uploaded successfully", {
-        fileName,
-        fileId: file.id,
-        size: file.size,
-      });
-
-      return file;
-    } catch (error) {
-      log.error("File upload failed", error as Error);
-      throw new AppError("Failed to upload file to Google Drive", 500);
-    }
-  }
-
-  /**
-   * Get file metadata from Google Drive
-   */
-  async getFileMetadata(fileId: string): Promise<DriveFile> {
-    await this.ensureTokenValid();
-
-    try {
-      const response = await this.drive.files.get({
-        fileId,
-        fields: "id, name, mimeType, webViewLink, size, createdTime",
-      });
-
-      return response.data as DriveFile;
-    } catch (error) {
-      log.error("Failed to get file metadata", error as Error);
-      throw new AppError("File not found", 404);
-    }
-  }
-
-  /**
-   * Get a readable stream for a file with Range header support
-   * Supports partial content downloads
-   */
-  async getStream(
-    fileId: string,
-    range?: string
-  ): Promise<{
-    stream: Readable;
-    contentType: string;
-    contentLength?: string;
-  }> {
-    await this.ensureTokenValid();
-
-    try {
-      const metadata = await this.getFileMetadata(fileId);
-
-      // Create request options
-      const options: any = {
-        fileId,
-        alt: "media",
-      };
-
-      // Handle Range header for partial content
-      if (range) {
-        const parts = range.replace(/bytes=/, "").split("-");
-        const start = parseInt(parts[0], 10);
-        const end = parts[1] ? parseInt(parts[1], 10) : undefined;
-
-        if (!isNaN(start)) {
-          options.headers = {
-            Range: `bytes=${start}${end ? `-${end}` : ""}`,
-          };
-        }
+      if (!response.data.id) {
+        throw new Error("Failed to upload file to Drive");
       }
 
-      const response = await this.drive.files.get(options, {
-        responseType: "stream",
-      });
-
-      log.debug("Stream created for file", { fileId });
-
       return {
-        stream: response.data as Readable,
-        contentType: metadata.mimeType || "application/octet-stream",
-        contentLength: metadata.size,
+        id: response.data.id,
+        webViewLink: response.data.webViewLink || undefined,
       };
     } catch (error) {
-      log.error("Failed to create stream", error as Error);
-      throw new AppError("Failed to stream file from Google Drive", 500);
+      log.error("Drive Upload Error", error as Error);
+      throw error;
     }
   }
 
   /**
-   * Delete a file from Google Drive
+   * Get file stream for download/playback
    */
-  async deleteFile(fileId: string): Promise<void> {
+  async getStream(fileId: string, range?: string) {
     await this.ensureTokenValid();
 
-    try {
-      await this.drive.files.delete({
+    // Get metadata for size/type
+    const meta = await this.drive.files.get({
+      fileId,
+      fields: "size, mimeType",
+    });
+
+    const headers: any = {};
+    if (range) headers.Range = range;
+
+    const stream = await this.drive.files.get(
+      {
         fileId,
-      });
-      log.info("File deleted successfully", { fileId });
-    } catch (error) {
-      log.error("Failed to delete file", error as Error);
-      throw new AppError("Failed to delete file from Google Drive", 500);
-    }
+        alt: "media",
+      },
+      {
+        responseType: "stream",
+        headers,
+      }
+    );
+
+    return {
+      stream: stream.data,
+      contentType: meta.data.mimeType || "application/octet-stream",
+      contentLength: meta.data.size ? Number(meta.data.size) : undefined,
+    };
   }
 
   /**
-   * Clear the folder cache (useful for testing or manual refresh)
+   * Ensure Canonical Folder Structure Exists (Level -> Stream -> Grade -> ...)
    */
-  clearFolderCache(): void {
-    this.folderCache.clear();
-    log.debug("Folder cache cleared");
+  async ensureCanonicalFolder(hierarchy: HierarchyTags): Promise<string> {
+    await this.ensureTokenValid();
+
+    const rootId = env.UPLOAD_FOLDER_ID;
+    if (!rootId) throw new Error("UPLOAD_FOLDER_ID not configured");
+
+    // Order: Level -> Stream -> Grade -> Subject -> Lesson
+    const nodes: { name: string }[] = [];
+    if (hierarchy.level) nodes.push(hierarchy.level);
+    if (hierarchy.stream) nodes.push(hierarchy.stream);
+    if (hierarchy.grade) nodes.push(hierarchy.grade);
+    if (hierarchy.subject) nodes.push(hierarchy.subject);
+    if (hierarchy.lesson) nodes.push(hierarchy.lesson);
+
+    if (nodes.length === 0) return rootId;
+
+    let currentParentId = rootId;
+    let pathString = "";
+
+    for (const node of nodes) {
+      pathString += `/${node.name}`;
+
+      // Check Cache
+      if (this.folderPathCache.has(pathString)) {
+        currentParentId = this.folderPathCache.get(pathString)!;
+        continue;
+      }
+
+      // Check Drive
+      const q = `'${currentParentId}' in parents and name = '${node.name}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+      const res = await this.drive.files.list({ q, fields: "files(id)" });
+
+      if (res.data.files && res.data.files.length > 0) {
+        currentParentId = res.data.files[0].id!;
+      } else {
+        // Create
+        const createRes = await this.drive.files.create({
+          requestBody: {
+            name: node.name,
+            mimeType: "application/vnd.google-apps.folder",
+            parents: [currentParentId],
+          },
+          fields: "id",
+        });
+        currentParentId = createRes.data.id!;
+      }
+
+      this.folderPathCache.set(pathString, currentParentId);
+    }
+
+    return currentParentId;
+  }
+
+  /**
+   * Ensure STORE folder exists for User Uploads
+   */
+  async ensureStoreFolder(): Promise<string> {
+    await this.ensureTokenValid();
+    const rootId = env.UPLOAD_FOLDER_ID;
+    if (!rootId) throw new Error("UPLOAD_FOLDER_ID not configured");
+
+    const storeName = "STORE";
+    const cacheKey = `/STORE`;
+
+    if (this.folderPathCache.has(cacheKey)) {
+      return this.folderPathCache.get(cacheKey)!;
+    }
+
+    // Check Drive
+    const q = `'${rootId}' in parents and name = '${storeName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+    const res = await this.drive.files.list({ q, fields: "files(id)" });
+
+    let storeId: string;
+    if (res.data.files && res.data.files.length > 0) {
+      storeId = res.data.files[0].id!;
+    } else {
+      const createRes = await this.drive.files.create({
+        requestBody: {
+          name: storeName,
+          mimeType: "application/vnd.google-apps.folder",
+          parents: [rootId],
+        },
+        fields: "id",
+      });
+      storeId = createRes.data.id!;
+    }
+
+    this.folderPathCache.set(cacheKey, storeId);
+    return storeId;
   }
 }
 
-// Export singleton instance
 export const driveService = new DriveService();

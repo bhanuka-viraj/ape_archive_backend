@@ -188,6 +188,7 @@ model Resource {
   description String?        @db.Text
   
   driveFileId String?  // Copied file ID in upload folder (after migration)
+  originalDriveId String? // Legacy file ID for deduplication
   mimeType    String?  
   fileSize    BigInt?  
   externalUrl String? 
